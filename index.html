@@ -1,231 +1,373 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="htmlRoot">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام نقل سياحي</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<title>Travel Band — نظام إدارة النقل السياحي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --gold: #c9a84c;
-    --dark: #0d0d0d;
-    --panel: #161616;
-    --card: #1e1e1e;
-    --border: #2e2e2e;
-    --text: #f0ead6;
-    --muted: #888;
-    --green: #2ecc71;
-    --red: #e74c3c;
-    --amber: #f39c12;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Cairo', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+:root {
+  --orange: #E8620A;
+  --orange-light: #F97316;
+  --orange-pale: #FEF3EC;
+  --brown: #5C2D0E;
+  --brown-mid: #7C3D14;
+  --brown-light: #A0522D;
+  --cream: #FDF8F4;
+  --white: #FFFFFF;
+  --border: #E8D5C4;
+  --text: #2C1A0E;
+  --muted: #8B6555;
+  --green: #16A34A;
+  --red: #DC2626;
+  --amber: #D97706;
+  --blue: #1D6FAA;
+  --card-shadow: 0 2px 8px rgba(92,45,14,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Cairo',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; }
+[dir="ltr"] body { font-family:'Poppins','Cairo',sans-serif; }
 
-  #lockScreen {
-    position: fixed; inset: 0; background: var(--dark);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 1000; flex-direction: column; gap: 2rem;
-  }
-  .lock-logo { font-size: 3rem; font-weight: 900; color: var(--gold); letter-spacing: 2px; text-align: center; }
-  .lock-logo span { display: block; font-size: 1rem; color: var(--muted); font-weight: 400; }
-  .lock-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 340px; text-align: center; }
-  .lock-box h2 { color: var(--gold); margin-bottom: 1.5rem; font-size: 1.1rem; }
-  .lock-input { width: 100%; padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Cairo', sans-serif; font-size: 1.1rem; text-align: center; letter-spacing: 4px; margin-bottom: 1rem; }
-  .lock-input:focus { outline: none; border-color: var(--gold); }
-  .lock-btn { width: 100%; padding: 12px; background: var(--gold); color: var(--dark); border: none; border-radius: 8px; font-family: 'Cairo', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; }
-  .lock-error { color: var(--red); font-size: 0.9rem; margin-top: 0.5rem; display: none; }
+/* LOCK */
+#lockScreen { position:fixed; inset:0; background:var(--brown); display:flex; align-items:center; justify-content:center; z-index:1000; flex-direction:column; gap:1.5rem; }
+.lock-logo-wrap { text-align:center; }
+.lock-logo-wrap img { height:60px; filter:brightness(0) invert(1); }
+.lock-logo-text { color:white; font-size:1rem; margin-top:8px; opacity:0.7; }
+.lock-box { background:white; border-radius:16px; padding:2rem; width:320px; text-align:center; }
+.lock-box h2 { color:var(--brown); margin-bottom:1.5rem; font-size:1.1rem; }
+.lock-input { width:100%; padding:12px; background:var(--cream); border:1.5px solid var(--border); border-radius:8px; color:var(--text); font-family:'Cairo',sans-serif; font-size:1.2rem; text-align:center; letter-spacing:6px; margin-bottom:1rem; }
+.lock-input:focus { outline:none; border-color:var(--orange); }
+.lock-btn { width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-family:'Cairo','Poppins',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; }
+.lock-error { color:var(--red); font-size:0.9rem; margin-top:0.5rem; display:none; }
 
-  header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .logo { font-size: 1.4rem; font-weight: 900; color: var(--gold); }
-  .logo span { color: var(--text); font-weight: 400; font-size: 0.9rem; display: block; }
-  .egypt-time { text-align: left; font-size: 0.85rem; color: var(--muted); }
-  .egypt-time b { color: var(--gold); font-size: 1.1rem; display: block; }
+/* LOADING */
+#loadingOverlay { position:fixed; inset:0; background:var(--brown); display:flex; align-items:center; justify-content:center; z-index:500; flex-direction:column; gap:1rem; }
+.spinner { width:40px; height:40px; border:3px solid rgba(255,255,255,0.2); border-top-color:var(--orange); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
 
-  nav { background: var(--panel); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; gap: 0; overflow-x: auto; }
-  .nav-btn { padding: 14px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--muted); font-family: 'Cairo', sans-serif; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-  .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+/* HEADER */
+header { background:var(--brown); padding:0 1.5rem; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+.header-top { display:flex; align-items:center; justify-content:space-between; padding:0.75rem 0; border-bottom:1px solid rgba(255,255,255,0.1); }
+.header-logo { display:flex; align-items:center; gap:10px; }
+.header-logo img { height:36px; filter:brightness(0) invert(1); }
+.header-logo-text { color:white; font-size:0.8rem; opacity:0.75; }
+.header-actions { display:flex; align-items:center; gap:12px; }
+.lang-switch { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.1); border-radius:20px; padding:4px 8px; cursor:pointer; border:1px solid rgba(255,255,255,0.2); }
+.lang-switch span { font-size:0.8rem; color:white; font-weight:600; }
+.lang-dot { width:20px; height:20px; border-radius:50%; background:var(--orange); display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:white; font-weight:700; }
+.add-driver-btn { background:var(--orange); color:white; border:none; border-radius:8px; padding:7px 14px; font-family:'Cairo','Poppins',sans-serif; font-size:0.85rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+.clock-wrap { color:rgba(255,255,255,0.8); font-size:0.8rem; text-align:center; }
+.clock-wrap b { color:var(--orange-light); font-size:1rem; display:block; }
 
-  main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
-  .page { display: none; }
-  .page.active { display: block; }
+/* NAV */
+nav { display:flex; overflow-x:auto; padding:0; }
+.nav-btn { padding:12px 18px; background:none; border:none; border-bottom:3px solid transparent; color:rgba(255,255,255,0.6); font-family:'Cairo','Poppins',sans-serif; font-size:0.9rem; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+.nav-btn.active { color:var(--orange-light); border-bottom-color:var(--orange-light); }
+.nav-btn:hover { color:white; }
 
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-  .card-title { font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+/* MAIN */
+main { padding:1.5rem; max-width:1200px; margin:0 auto; }
+.page { display:none; }
+.page.active { display:block; }
 
-  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group label { font-size: 0.85rem; color: var(--muted); }
-  .form-group input, .form-group select { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: 'Cairo', sans-serif; font-size: 0.95rem; }
-  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--gold); }
-  .form-group select option { background: var(--panel); }
+/* LOGO CENTER */
+.company-logo-center { text-align:center; padding:1.5rem 0 0.5rem; }
+.company-logo-center img { height:55px; }
+.company-logo-center .tagline { font-size:0.85rem; color:var(--muted); margin-top:4px; }
 
-  .btn { padding: 10px 24px; border-radius: 8px; border: none; font-family: 'Cairo', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-  .btn-primary { background: var(--gold); color: var(--dark); }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); font-size: 0.8rem; padding: 5px 12px; }
-  .btn-danger:hover { background: var(--red); color: white; }
+/* CARDS */
+.card { background:white; border:1px solid var(--border); border-radius:12px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:var(--card-shadow); }
+.card-title { font-size:1rem; font-weight:700; color:var(--brown); margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:2px solid var(--orange-pale); display:flex; align-items:center; gap:8px; }
+.card-title::before { content:''; width:4px; height:20px; background:var(--orange); border-radius:2px; display:inline-block; }
 
-  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; text-align: center; }
-  .stat-num { font-size: 2rem; font-weight: 900; color: var(--gold); }
-  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+/* FORM */
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group label { font-size:0.82rem; color:var(--muted); font-weight:600; }
+.form-group input, .form-group select, .form-group textarea {
+  background:var(--cream); border:1.5px solid var(--border); border-radius:8px;
+  padding:9px 12px; color:var(--text); font-family:'Cairo','Poppins',sans-serif; font-size:0.9rem;
+}
+.form-group input:focus, .form-group select:focus { outline:none; border-color:var(--orange); }
+.form-group select option { background:white; }
+.btn { padding:9px 22px; border-radius:8px; border:none; font-family:'Cairo','Poppins',sans-serif; font-size:0.9rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-primary { background:var(--orange); color:white; }
+.btn-primary:hover { background:var(--orange-light); }
+.btn-danger { background:transparent; color:var(--red); border:1px solid var(--red); font-size:0.78rem; padding:4px 10px; border-radius:6px; }
+.btn-danger:hover { background:var(--red); color:white; }
+.btn-secondary { background:var(--cream); color:var(--brown); border:1px solid var(--border); }
 
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th { background: var(--panel); color: var(--muted); padding: 10px 14px; text-align: right; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
+/* STATS */
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1rem; margin-bottom:1.5rem; }
+.stat-card { background:white; border:1px solid var(--border); border-radius:12px; padding:1.2rem; text-align:center; box-shadow:var(--card-shadow); border-top:3px solid var(--orange); }
+.stat-num { font-size:2rem; font-weight:900; color:var(--orange); }
+.stat-label { font-size:0.78rem; color:var(--muted); margin-top:4px; }
 
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.78rem; font-weight: 600; }
-  .badge-green { background: rgba(46,204,113,0.15); color: var(--green); }
-  .badge-red { background: rgba(231,76,60,0.15); color: var(--red); }
-  .badge-amber { background: rgba(243,156,18,0.15); color: var(--amber); }
-  .badge-blue { background: rgba(52,152,219,0.15); color: #3498db; }
+/* TABLE */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+th { background:var(--orange-pale); color:var(--brown); padding:10px 12px; text-align:right; font-weight:700; border-bottom:2px solid var(--border); white-space:nowrap; }
+[dir="ltr"] th { text-align:left; }
+td { padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--orange-pale); }
 
-  .shift-options { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
-  .shift-opt { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 0.9rem; background: var(--panel); color: var(--muted); transition: all 0.2s; }
-  .shift-opt.selected { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+/* BADGES */
+.badge { display:inline-block; padding:3px 10px; border-radius:99px; font-size:0.75rem; font-weight:700; }
+.badge-green { background:rgba(22,163,74,0.12); color:var(--green); }
+.badge-red { background:rgba(220,38,38,0.12); color:var(--red); }
+.badge-amber { background:rgba(217,119,6,0.12); color:var(--amber); }
+.badge-blue { background:rgba(29,111,170,0.12); color:var(--blue); }
+.badge-orange { background:rgba(232,98,10,0.12); color:var(--orange); }
 
-  .attend-header { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1.5rem; }
+/* SHIFT OPTIONS */
+.shift-options { display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem; }
+.shift-opt { padding:8px 14px; border-radius:8px; border:1.5px solid var(--border); cursor:pointer; font-family:'Cairo','Poppins',sans-serif; font-size:0.85rem; background:var(--cream); color:var(--muted); transition:all 0.2s; }
+.shift-opt.selected { border-color:var(--orange); color:var(--orange); background:var(--orange-pale); font-weight:700; }
 
-  #toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--gold); color: var(--dark); padding: 12px 28px; border-radius: 8px; font-weight: 700; transition: transform 0.3s; z-index: 9999; pointer-events: none; }
-  #toast.show { transform: translateX(-50%) translateY(0); }
+/* DRIVER PROFILE CARD */
+.driver-profile { background:var(--orange-pale); border-radius:12px; padding:1.25rem; margin-bottom:1rem; border:1px solid var(--border); }
+.driver-profile .dp-name { font-size:1.1rem; font-weight:700; color:var(--brown); margin-bottom:0.5rem; }
+.driver-profile .dp-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.5rem; }
+.driver-profile .dp-item { font-size:0.85rem; color:var(--muted); }
+.driver-profile .dp-item b { color:var(--text); display:block; }
 
-  #loadingOverlay { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 500; flex-direction: column; gap: 1rem; }
-  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; display:none; align-items:center; justify-content:center; padding:1rem; }
+.modal-overlay.open { display:flex; }
+.modal { background:white; border-radius:16px; padding:2rem; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+.modal-title { font-size:1.1rem; font-weight:700; color:var(--brown); margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; }
+.modal-close { background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--muted); line-height:1; }
 
-  .empty-state { text-align: center; color: var(--muted); padding: 3rem; font-size: 0.95rem; }
+/* FOOTER */
+footer { background:var(--brown); color:rgba(255,255,255,0.8); text-align:center; padding:1.5rem; margin-top:2rem; font-size:0.85rem; line-height:2; }
+footer a { color:var(--orange-light); text-decoration:none; }
+footer .footer-logo { margin-bottom:0.5rem; }
+footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
 
-  @media (max-width: 600px) {
-    main { padding: 1rem; }
-    header { padding: 1rem; }
-    .form-grid { grid-template-columns: 1fr; }
-  }
+/* TOAST */
+#toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(100px); background:var(--orange); color:white; padding:12px 28px; border-radius:8px; font-weight:700; transition:transform 0.3s; z-index:9999; pointer-events:none; box-shadow:0 4px 16px rgba(232,98,10,0.4); }
+#toast.show { transform:translateX(-50%) translateY(0); }
+
+.empty-state { text-align:center; color:var(--muted); padding:2.5rem; font-size:0.9rem; }
+.section-sep { height:1px; background:var(--border); margin:1.5rem 0; }
+
+@media(max-width:600px) { main { padding:1rem; } header { padding:0 1rem; } }
 </style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div id="loadingOverlay">
   <div class="spinner"></div>
-  <span style="color:var(--gold)">جاري تحميل البيانات...</span>
+  <span style="color:rgba(255,255,255,0.7);font-size:0.9rem" data-ar="جاري تحميل البيانات..." data-en="Loading data...">جاري تحميل البيانات...</span>
 </div>
 
+<!-- LOCK -->
 <div id="lockScreen" style="display:none">
-  <div class="lock-logo">🚌 نقل سياحي <span>نظام إدارة السائقين والرحلات</span></div>
+  <div class="lock-logo-wrap">
+    <div style="font-size:2.5rem;font-weight:900;color:white;letter-spacing:1px;">🚌 Travel Band</div>
+    <div class="lock-logo-text" data-ar="نظام إدارة النقل السياحي" data-en="Tourism Transport Management">نظام إدارة النقل السياحي</div>
+  </div>
   <div class="lock-box">
-    <h2>🔐 أدخل الكود السري</h2>
-    <input class="lock-input" type="password" id="pinInput" placeholder="••••••" maxlength="6" />
-    <button class="lock-btn" onclick="checkPin()">دخول</button>
-    <div class="lock-error" id="lockError">❌ الكود غلط، حاول تاني</div>
+    <h2 data-ar="🔐 أدخل الكود السري" data-en="🔐 Enter PIN">🔐 أدخل الكود السري</h2>
+    <input class="lock-input" type="password" id="pinInput" placeholder="••••••" maxlength="6"/>
+    <button class="lock-btn" onclick="checkPin()" data-ar="دخول" data-en="Login">دخول</button>
+    <div class="lock-error" id="lockError" data-ar="❌ الكود غلط، حاول تاني" data-en="❌ Wrong PIN, try again">❌ الكود غلط، حاول تاني</div>
   </div>
 </div>
 
-<header>
-  <div class="logo">🚌 نقل سياحي <span>نظام إدارة الرحلات</span></div>
-  <div class="egypt-time">
-    <b id="clockDisplay">--:--:--</b>
-    <span>التوقيت المصري</span>
+<!-- ADD DRIVER MODAL -->
+<div class="modal-overlay" id="addDriverModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span data-ar="➕ إضافة سائق جديد" data-en="➕ Add New Driver">➕ إضافة سائق جديد</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group"><label data-ar="اسم السائق" data-en="Driver Name">اسم السائق</label><input type="text" id="driverName" /></div>
+      <div class="form-group"><label data-ar="رقم التليفون المصري" data-en="Egyptian Phone Number">رقم التليفون المصري</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx"/></div>
+      <div class="form-group"><label data-ar="رقم لوحة العربية (مصري)" data-en="Egyptian Plate Number">رقم لوحة العربية (مصري)</label><input type="text" id="driverPlate" placeholder="أ ب ج ١٢٣٤"/></div>
+      <div class="form-group"><label data-ar="رقم / علامة الباص" data-en="Bus Number / Sign">رقم / علامة الباص</label><input type="text" id="driverBusSign" placeholder="مثال: B12"/></div>
+      <div class="form-group"><label data-ar="رقم رخصة القيادة" data-en="License Number">رقم رخصة القيادة</label><input type="text" id="driverLicense"/></div>
+      <div class="form-group"><label data-ar="المجموعة" data-en="Group">المجموعة</label>
+        <select id="driverGroup">
+          <option value="" data-ar="اختر المجموعة" data-en="Select Group">اختر المجموعة</option>
+          <option>مجموعة أ / Group A</option><option>مجموعة ب / Group B</option>
+          <option>مجموعة ج / Group C</option><option>مجموعة د / Group D</option>
+        </select>
+      </div>
+    </div>
+    <br/>
+    <button class="btn btn-primary" onclick="addDriver()" style="width:100%" data-ar="إضافة السائق" data-en="Add Driver">إضافة السائق</button>
   </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <div class="header-logo">
+      <span style="font-size:1.6rem;font-weight:900;color:white;">🚌</span>
+      <div>
+        <div style="color:white;font-weight:700;font-size:1rem;">Travel Band</div>
+        <div class="header-logo-text" data-ar="نقل سياحي" data-en="Tourism Transport">نقل سياحي</div>
+      </div>
+    </div>
+    <div class="clock-wrap">
+      <b id="clockDisplay">--:--</b>
+      <span data-ar="التوقيت المصري" data-en="Egypt Time">التوقيت المصري</span>
+    </div>
+    <div class="header-actions">
+      <div class="lang-switch" onclick="toggleLang()">
+        <div class="lang-dot" id="langDot">ع</div>
+        <span id="langLabel">AR</span>
+      </div>
+      <button class="add-driver-btn" onclick="openModal()" data-ar="➕ إضافة سائق" data-en="➕ Add Driver">➕ إضافة سائق</button>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn active" onclick="showPage('dashboard',this)" data-ar="📊 الرئيسية" data-en="📊 Dashboard">📊 الرئيسية</button>
+    <button class="nav-btn" onclick="showPage('drivers',this)" data-ar="👤 السائقين" data-en="👤 Drivers">👤 السائقين</button>
+    <button class="nav-btn" onclick="showPage('attendance',this)" data-ar="📋 الحضور" data-en="📋 Attendance">📋 الحضور</button>
+    <button class="nav-btn" onclick="showPage('reports',this)" data-ar="📈 التقارير" data-en="📈 Reports">📈 التقارير</button>
+  </nav>
 </header>
 
-<nav>
-  <button class="nav-btn active" onclick="showPage('dashboard', this)">📊 الرئيسية</button>
-  <button class="nav-btn" onclick="showPage('buses', this)">🚌 الباصات</button>
-  <button class="nav-btn" onclick="showPage('drivers', this)">👤 السائقين</button>
-  <button class="nav-btn" onclick="showPage('attendance', this)">📋 الحضور</button>
-  <button class="nav-btn" onclick="showPage('reports', this)">📈 التقارير</button>
-</nav>
-
 <main>
+
+  <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
+    <div class="company-logo-center">
+      <div style="font-size:2rem;font-weight:900;color:var(--brown);">🚌 Travel Band</div>
+      <div class="tagline" data-ar="نظام إدارة النقل السياحي" data-en="Tourism Transport Management System">نظام إدارة النقل السياحي</div>
+    </div>
+    <br/>
     <div class="stats-row" id="statsRow"></div>
     <div class="card">
-      <div class="card-title">📋 سجل الحضور اليوم</div>
+      <div class="card-title" data-ar="📋 سجل الحضور اليوم" data-en="📋 Today's Attendance">📋 سجل الحضور اليوم</div>
       <div class="table-wrap" id="todayTable"></div>
     </div>
   </div>
 
-  <div class="page" id="page-buses">
-    <div class="card">
-      <div class="card-title">➕ إضافة باص جديد</div>
-      <div class="form-grid">
-        <div class="form-group"><label>رقم لوحة الباص (مصري)</label><input type="text" id="busPlate" placeholder="مثال: أ ب ج ١٢٣٤" /></div>
-        <div class="form-group"><label>نوع الباص</label>
-          <select id="busType"><option value="">اختر النوع</option><option>ميني باص</option><option>ميكروباص</option><option>باص متوسط</option><option>باص كبير</option><option>كوستر</option></select>
-        </div>
-        <div class="form-group"><label>سعة الركاب</label><input type="number" id="busCap" placeholder="عدد الركاب" /></div>
-        <div class="form-group"><label>المجموعة</label>
-          <select id="busGroup"><option value="">اختر المجموعة</option><option>مجموعة أ</option><option>مجموعة ب</option><option>مجموعة ج</option><option>مجموعة د</option></select>
-        </div>
-        <div class="form-group"><label>مسؤول المجموعة</label><input type="text" id="busManager" placeholder="اسم المسؤول" /></div>
-      </div>
-      <br/><button class="btn btn-primary" onclick="addBus()">إضافة الباص</button>
-    </div>
-    <div class="card"><div class="card-title">🚌 قائمة الباصات</div><div class="table-wrap" id="busesTable"></div></div>
-  </div>
-
+  <!-- DRIVERS -->
   <div class="page" id="page-drivers">
     <div class="card">
-      <div class="card-title">➕ إضافة سائق جديد</div>
-      <div class="form-grid">
-        <div class="form-group"><label>اسم السائق</label><input type="text" id="driverName" placeholder="الاسم كامل" /></div>
-        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx" /></div>
-        <div class="form-group"><label>الباص المخصص</label><select id="driverBus"></select></div>
-        <div class="form-group"><label>رقم رخصة القيادة</label><input type="text" id="driverLicense" placeholder="رقم الرخصة" /></div>
+      <div class="card-title" data-ar="👤 بيانات السائق" data-en="👤 Driver Details">👤 بيانات السائق</div>
+      <div class="form-group" style="max-width:300px; margin-bottom:1.25rem;">
+        <label data-ar="اختر السائق" data-en="Select Driver">اختر السائق</label>
+        <select id="driverViewSelect" onchange="loadDriverProfile()">
+          <option value="" data-ar="— اختر سائق —" data-en="— Select Driver —">— اختر سائق —</option>
+        </select>
       </div>
-      <br/><button class="btn btn-primary" onclick="addDriver()">إضافة السائق</button>
+      <div id="driverProfileArea"></div>
+      <div id="driverAttendanceArea"></div>
     </div>
-    <div class="card"><div class="card-title">👤 قائمة السائقين</div><div class="table-wrap" id="driversTable"></div></div>
+
+    <div class="card">
+      <div class="card-title" data-ar="📋 قائمة كل السائقين" data-en="📋 All Drivers">📋 قائمة كل السائقين</div>
+      <div class="table-wrap" id="allDriversTable"></div>
+    </div>
   </div>
 
+  <!-- ATTENDANCE -->
   <div class="page" id="page-attendance">
     <div class="card">
-      <div class="card-title">📋 تسجيل الحضور والانصراف</div>
-      <div class="attend-header">
-        <div class="form-group" style="min-width:200px"><label>التاريخ</label><input type="date" id="attendDate" /></div>
-        <div class="form-group" style="min-width:200px"><label>اختر السائق</label><select id="attendDriver"></select></div>
-      </div>
-      <div class="form-group" style="margin-bottom:1rem">
-        <label>وقت الانصراف</label>
-        <div class="shift-options">
-          <div class="shift-opt" onclick="selectShift(this,'12:30')">🌤 نص يوم — 12:30 ظ</div>
-          <div class="shift-opt" onclick="selectShift(this,'14:00')">☀️ شغل عادي — 2:00 م</div>
-          <div class="shift-opt" onclick="selectShift(this,'21:00')">🌙 شغل إضافي — 9:00 م</div>
-          <div class="shift-opt" onclick="selectShift(this,'custom')">⏰ وقت تاني</div>
+      <div class="card-title" data-ar="📋 تسجيل الحضور" data-en="📋 Record Attendance">📋 تسجيل الحضور</div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.25rem;">
+        <div class="form-group" style="min-width:180px">
+          <label data-ar="التاريخ" data-en="Date">التاريخ</label>
+          <input type="date" id="attendDate"/>
+        </div>
+        <div class="form-group" style="min-width:200px">
+          <label data-ar="اختر السائق" data-en="Select Driver">اختر السائق</label>
+          <select id="attendDriver" onchange="fillAttendDriverInfo()"></select>
         </div>
       </div>
-      <div id="customTimeRow" style="display:none; margin-bottom:1rem;">
-        <div class="form-group" style="max-width:200px"><label>حدد الوقت</label><input type="time" id="customTime" /></div>
+
+      <div id="attendDriverInfo" style="display:none" class="driver-profile" style="margin-bottom:1rem;">
+        <div class="dp-grid">
+          <div class="dp-item"><span data-ar="التليفون" data-en="Phone">التليفون</span><b id="adPhone">—</b></div>
+          <div class="dp-item"><span data-ar="اللوحة" data-en="Plate">اللوحة</span><b id="adPlate">—</b></div>
+          <div class="dp-item"><span data-ar="الباص" data-en="Bus">الباص</span><b id="adBus">—</b></div>
+        </div>
       </div>
-      <div class="form-group" style="margin-bottom:1.5rem; max-width:400px">
-        <label>ملاحظات (اختياري)</label><input type="text" id="attendNote" placeholder="أي ملاحظات..." />
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label data-ar="برنامج الباص / المسار" data-en="Bus Program / Route">برنامج الباص / المسار</label>
+        <input type="text" id="attendRoute" placeholder="مثال: مطار — فندق نيل هيلتون"/>
       </div>
-      <button class="btn btn-primary" onclick="saveAttendance()">حفظ الحضور</button>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label data-ar="وقت الانصراف" data-en="End Time">وقت الانصراف</label>
+        <div class="shift-options">
+          <div class="shift-opt" onclick="selectShift(this,'12:30')" data-ar="🌤 نص يوم 12:30" data-en="🌤 Half Day 12:30">🌤 نص يوم 12:30</div>
+          <div class="shift-opt" onclick="selectShift(this,'14:00')" data-ar="☀️ عادي 2:00م" data-en="☀️ Normal 2:00pm">☀️ عادي 2:00م</div>
+          <div class="shift-opt" onclick="selectShift(this,'21:00')" data-ar="🌙 إضافي 9:00م" data-en="🌙 Extra 9:00pm">🌙 إضافي 9:00م</div>
+          <div class="shift-opt" onclick="selectShift(this,'custom')" data-ar="⏰ وقت تاني" data-en="⏰ Custom Time">⏰ وقت تاني</div>
+        </div>
+      </div>
+      <div id="customTimeRow" style="display:none;margin-bottom:1rem;">
+        <div class="form-group" style="max-width:200px">
+          <label data-ar="حدد الوقت" data-en="Set Time">حدد الوقت</label>
+          <input type="time" id="customTime"/>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:1.5rem;max-width:400px">
+        <label data-ar="ملاحظات" data-en="Notes">ملاحظات</label>
+        <input type="text" id="attendNote"/>
+      </div>
+      <button class="btn btn-primary" onclick="saveAttendance()" data-ar="حفظ الحضور" data-en="Save Attendance">حفظ الحضور</button>
     </div>
+
     <div class="card">
-      <div class="card-title">📅 سجل الحضور</div>
-      <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; align-items:flex-end;">
-        <div class="form-group" style="min-width:180px"><label>فلتر بالتاريخ</label><input type="date" id="filterDate" onchange="renderAttendance()" /></div>
-        <button class="btn btn-primary" style="height:42px;" onclick="clearDateFilter()">كل السجلات</button>
+      <div class="card-title" data-ar="📅 سجل الحضور" data-en="📅 Attendance Log">📅 سجل الحضور</div>
+      <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group" style="min-width:180px">
+          <label data-ar="فلتر بالتاريخ" data-en="Filter by Date">فلتر بالتاريخ</label>
+          <input type="date" id="filterDate" onchange="renderAttendance()"/>
+        </div>
+        <button class="btn btn-secondary" onclick="clearFilter()" data-ar="كل السجلات" data-en="All Records">كل السجلات</button>
       </div>
       <div class="table-wrap" id="attendanceTable"></div>
     </div>
   </div>
 
+  <!-- REPORTS -->
   <div class="page" id="page-reports">
-    <div class="card"><div class="card-title">📈 تقرير شامل</div><div id="reportContent"></div></div>
+    <div class="card">
+      <div class="card-title" data-ar="📈 ملخص سائق" data-en="📈 Driver Summary">📈 ملخص سائق</div>
+      <div style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <div class="form-group" style="min-width:220px">
+          <label data-ar="اختر السائق" data-en="Select Driver">اختر السائق</label>
+          <select id="reportDriverSelect" onchange="renderDriverReport()"></select>
+        </div>
+      </div>
+      <div id="reportDriverProfile"></div>
+      <div id="reportContent"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" data-ar="📊 ملخص كل السائقين" data-en="📊 All Drivers Summary">📊 ملخص كل السائقين</div>
+      <div class="table-wrap" id="allReportsTable"></div>
+    </div>
   </div>
+
 </main>
 
-<div id="toast">تم الحفظ ✓</div>
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo"><span style="font-size:1.5rem;font-weight:900;color:white;">🚌 Travel Band</span></div>
+  <div>📍 11 El Nasr Road, Nasr City, Cairo — Egypt &nbsp;|&nbsp; 2nd Floor, No. 204</div>
+  <div>📞 +202 24013180 &nbsp;|&nbsp; +202 226 05674 &nbsp;|&nbsp; 📱 +201223 150973 &nbsp;|&nbsp; +201283 150973</div>
+  <div><a href="https://www.travelband.net" target="_blank">🌐 www.travelband.net</a></div>
+</footer>
+
+<div id="toast">✓</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const SECRET_PIN = "1234";
-
 const firebaseConfig = {
   apiKey: "AIzaSyDtY0yMhxgtog1fzyb7Qqurcge68iM2T3E",
   authDomain: "abdelrahman-transport.firebaseapp.com",
@@ -235,247 +377,335 @@ const firebaseConfig = {
   messagingSenderId: "219656259545",
   appId: "1:219656259545:web:07eaae9d9b804c20243bc8"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let buses = {}, drivers = {}, attendance = {};
-let dataLoaded = 0;
+let drivers = {}, attendance = {};
+let loaded = 0;
+let currentLang = 'ar';
 
-function checkAllLoaded() {
-  dataLoaded++;
-  if (dataLoaded >= 3) {
-    document.getElementById('loadingOverlay').style.display = 'none';
-    document.getElementById('lockScreen').style.display = 'flex';
-  }
+function checkLoaded() { loaded++; if (loaded >= 2) { document.getElementById('loadingOverlay').style.display='none'; document.getElementById('lockScreen').style.display='flex'; } }
+
+onValue(ref(db,'drivers'), snap => { drivers = snap.val()||{}; renderAllDrivers(); refreshSelects(); renderDashboard(); checkLoaded(); });
+onValue(ref(db,'attendance'), snap => { attendance = snap.val()||{}; renderAttendance(); renderDashboard(); checkLoaded(); });
+
+// ===== LANG =====
+window.toggleLang = function() {
+  currentLang = currentLang === 'ar' ? 'en' : 'ar';
+  const html = document.getElementById('htmlRoot');
+  html.setAttribute('lang', currentLang);
+  html.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+  document.getElementById('langDot').textContent = currentLang === 'ar' ? 'ع' : 'EN';
+  document.getElementById('langLabel').textContent = currentLang === 'ar' ? 'AR' : 'EN';
+  document.querySelectorAll('[data-ar]').forEach(el => {
+    const val = currentLang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
+    if (el.tagName === 'INPUT' || el.tagName === 'OPTION') el.textContent = val;
+    else if (el.tagName === 'BUTTON' || el.tagName === 'LABEL' || el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'H2') el.textContent = val;
+  });
+  renderAll();
 }
 
-onValue(ref(db, 'buses'), snap => { buses = snap.val() || {}; renderBuses(); refreshDriverSelects(); renderDashboard(); checkAllLoaded(); });
-onValue(ref(db, 'drivers'), snap => { drivers = snap.val() || {}; renderDrivers(); refreshDriverSelects(); renderDashboard(); checkAllLoaded(); });
-onValue(ref(db, 'attendance'), snap => { attendance = snap.val() || {}; renderAttendance(); renderDashboard(); checkAllLoaded(); });
+function t(ar, en) { return currentLang === 'ar' ? ar : en; }
 
+// ===== LOCK =====
 window.checkPin = function() {
   const val = document.getElementById('pinInput').value;
   if (val === SECRET_PIN) {
-    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('lockScreen').style.display='none';
     setTodayDate(); startClock();
   } else {
-    document.getElementById('lockError').style.display = 'block';
-    document.getElementById('pinInput').value = '';
-    setTimeout(() => document.getElementById('lockError').style.display = 'none', 3000);
+    document.getElementById('lockError').style.display='block';
+    document.getElementById('pinInput').value='';
+    setTimeout(()=>document.getElementById('lockError').style.display='none',3000);
   }
 }
-document.getElementById('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.checkPin(); });
+document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key==='Enter') window.checkPin(); });
 
 function startClock() {
-  function update() {
-    document.getElementById('clockDisplay').textContent = new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour12: true });
-  }
-  update(); setInterval(update, 1000);
+  function upd() { document.getElementById('clockDisplay').textContent = new Date().toLocaleTimeString('ar-EG',{timeZone:'Africa/Cairo',hour12:true}); }
+  upd(); setInterval(upd,1000);
 }
-
 function setTodayDate() {
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+  const today = new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Cairo'});
   document.getElementById('attendDate').value = today;
   document.getElementById('filterDate').value = today;
 }
 
+// ===== NAV =====
 window.showPage = function(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
-  if (id === 'reports') renderReports();
+  if(id==='reports') renderReports();
+  if(id==='drivers') renderAllDrivers();
 }
 
+// ===== MODAL =====
+window.openModal = function() { document.getElementById('addDriverModal').classList.add('open'); }
+window.closeModal = function() { document.getElementById('addDriverModal').classList.remove('open'); }
+
+// ===== TOAST =====
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-window.addBus = function() {
-  const plate = document.getElementById('busPlate').value.trim();
-  const type = document.getElementById('busType').value;
-  if (!plate || !type) return alert('اكتب رقم اللوحة ونوع الباص');
-  push(ref(db, 'buses'), {
-    plate, type,
-    cap: document.getElementById('busCap').value,
-    group: document.getElementById('busGroup').value,
-    manager: document.getElementById('busManager').value.trim()
-  });
-  ['busPlate','busCap','busManager'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('busType').value = '';
-  document.getElementById('busGroup').value = '';
-  toast('تم إضافة الباص ✓');
-}
-
-window.deleteBus = function(id) {
-  if (!confirm('مسح الباص؟')) return;
-  remove(ref(db, 'buses/' + id));
-}
-
-function renderBuses() {
-  const el = document.getElementById('busesTable');
-  const list = Object.entries(buses);
-  if (!list.length) { el.innerHTML = '<div class="empty-state">لا يوجد باصات مضافة</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>اللوحة</th><th>النوع</th><th>السعة</th><th>المجموعة</th><th>المسؤول</th><th></th></tr></thead><tbody>
-    ${list.map(([id,b]) => `<tr>
-      <td><b style="color:var(--gold)">${b.plate}</b></td><td>${b.type}</td><td>${b.cap||'—'}</td>
-      <td>${b.group?`<span class="badge badge-blue">${b.group}</span>`:'—'}</td>
-      <td>${b.manager||'—'}</td>
-      <td><button class="btn btn-danger" onclick="deleteBus('${id}')">مسح</button></td>
-    </tr>`).join('')}</tbody></table>`;
-}
-
+// ===== DRIVERS =====
 window.addDriver = function() {
   const name = document.getElementById('driverName').value.trim();
-  if (!name) return alert('اكتب اسم السائق');
-  push(ref(db, 'drivers'), {
-    name, phone: document.getElementById('driverPhone').value.trim(),
-    busId: document.getElementById('driverBus').value,
-    license: document.getElementById('driverLicense').value.trim()
+  if(!name) return alert(t('اكتب اسم السائق','Enter driver name'));
+  push(ref(db,'drivers'),{
+    name,
+    phone: document.getElementById('driverPhone').value.trim(),
+    plate: document.getElementById('driverPlate').value.trim(),
+    busSign: document.getElementById('driverBusSign').value.trim(),
+    license: document.getElementById('driverLicense').value.trim(),
+    group: document.getElementById('driverGroup').value
   });
-  ['driverName','driverPhone','driverLicense'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('driverBus').value = '';
-  toast('تم إضافة السائق ✓');
+  ['driverName','driverPhone','driverPlate','driverBusSign','driverLicense'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('driverGroup').value='';
+  closeModal();
+  toast(t('تم إضافة السائق ✓','Driver added ✓'));
 }
 
 window.deleteDriver = function(id) {
-  if (!confirm('مسح السائق؟')) return;
-  remove(ref(db, 'drivers/' + id));
+  if(!confirm(t('مسح السائق؟','Delete driver?'))) return;
+  remove(ref(db,'drivers/'+id));
 }
 
-function renderDrivers() {
-  const el = document.getElementById('driversTable');
+function renderAllDrivers() {
+  const el = document.getElementById('allDriversTable');
   const list = Object.entries(drivers);
-  if (!list.length) { el.innerHTML = '<div class="empty-state">لا يوجد سائقين مضافين</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>الاسم</th><th>الهاتف</th><th>الباص</th><th>الرخصة</th><th></th></tr></thead><tbody>
-    ${list.map(([id,d]) => {
-      const bus = d.busId ? buses[d.busId] : null;
-      return `<tr><td><b>${d.name}</b></td><td>${d.phone||'—'}</td>
-        <td>${bus?`<span class="badge badge-amber">${bus.plate}</span>`:'—'}</td>
-        <td>${d.license||'—'}</td>
-        <td><button class="btn btn-danger" onclick="deleteDriver('${id}')">مسح</button></td></tr>`;
-    }).join('')}</tbody></table>`;
+  if(!list.length){ el.innerHTML=`<div class="empty-state">${t('لا يوجد سائقين','No drivers yet')}</div>`; return; }
+  el.innerHTML=`<table><thead><tr>
+    <th>${t('الاسم','Name')}</th><th>${t('التليفون','Phone')}</th>
+    <th>${t('اللوحة','Plate')}</th><th>${t('الباص','Bus')}</th>
+    <th>${t('المجموعة','Group')}</th><th></th>
+  </tr></thead><tbody>
+  ${list.map(([id,d])=>`<tr>
+    <td><b>${d.name}</b></td><td>${d.phone||'—'}</td>
+    <td><span class="badge badge-orange">${d.plate||'—'}</span></td>
+    <td><span class="badge badge-blue">${d.busSign||'—'}</span></td>
+    <td>${d.group||'—'}</td>
+    <td><button class="btn btn-danger" onclick="deleteDriver('${id}')">${t('مسح','Delete')}</button></td>
+  </tr>`).join('')}</tbody></table>`;
+  refreshSelects();
 }
 
-function refreshDriverSelects() {
-  const busList = Object.entries(buses);
-  const driverList = Object.entries(drivers);
-  const db2 = document.getElementById('driverBus');
-  const ad = document.getElementById('attendDriver');
-  if (db2) db2.innerHTML = `<option value="">بدون باص</option>` + busList.map(([id,b]) => `<option value="${id}">${b.plate} — ${b.type}</option>`).join('');
-  if (ad) ad.innerHTML = `<option value="">اختر سائق</option>` + driverList.map(([id,d]) => `<option value="${id}">${d.name}</option>`).join('');
+function refreshSelects() {
+  const dList = Object.entries(drivers);
+  const opts = `<option value="">${t('— اختر سائق —','— Select Driver —')}</option>` + dList.map(([id,d])=>`<option value="${id}">${d.name}</option>`).join('');
+  ['attendDriver','driverViewSelect','reportDriverSelect'].forEach(sid=>{
+    const el = document.getElementById(sid);
+    if(el) el.innerHTML = opts;
+  });
 }
 
-let selectedShift = '';
-window.selectShift = function(el, val) {
-  document.querySelectorAll('.shift-opt').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected'); selectedShift = val;
-  document.getElementById('customTimeRow').style.display = val === 'custom' ? 'block' : 'none';
+// ===== DRIVER PROFILE VIEW =====
+window.loadDriverProfile = function() {
+  const id = document.getElementById('driverViewSelect').value;
+  const pa = document.getElementById('driverProfileArea');
+  const aa = document.getElementById('driverAttendanceArea');
+  if(!id){ pa.innerHTML=''; aa.innerHTML=''; return; }
+  const d = drivers[id];
+  pa.innerHTML=`<div class="driver-profile">
+    <div class="dp-name">👤 ${d.name}</div>
+    <div class="dp-grid">
+      <div class="dp-item">${t('التليفون','Phone')}<b>${d.phone||'—'}</b></div>
+      <div class="dp-item">${t('اللوحة','Plate')}<b>${d.plate||'—'}</b></div>
+      <div class="dp-item">${t('الباص','Bus Sign')}<b>${d.busSign||'—'}</b></div>
+      <div class="dp-item">${t('الرخصة','License')}<b>${d.license||'—'}</b></div>
+      <div class="dp-item">${t('المجموعة','Group')}<b>${d.group||'—'}</b></div>
+    </div>
+  </div>`;
+  // Attendance for this driver
+  const rows = Object.entries(attendance).filter(([,a])=>a.driverId===id).sort((a,b)=>b[1].timestamp-a[1].timestamp);
+  if(!rows.length){ aa.innerHTML=`<div class="empty-state">${t('لا يوجد حضور لهذا السائق','No attendance records')}</div>`; return; }
+  aa.innerHTML=`<h3 style="color:var(--brown);margin-bottom:0.75rem;font-size:0.95rem;">${t('سجل الحضور','Attendance History')}</h3>
+  <div class="table-wrap"><table><thead><tr>
+    <th>${t('التاريخ','Date')}</th><th>${t('البداية','Start')}</th><th>${t('النهاية','End')}</th>
+    <th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th><th>${t('ملاحظات','Notes')}</th>
+  </tr></thead><tbody>
+  ${rows.map(([,a])=>`<tr>
+    <td>${formatDate(a.date)}</td>
+    <td><span class="badge badge-green">7:30 ص</span></td>
+    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
+    <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
+    <td style="font-size:0.82rem;color:var(--muted)">${a.route||'—'}</td>
+    <td style="font-size:0.82rem;color:var(--muted)">${a.note||'—'}</td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ===== ATTENDANCE =====
+window.fillAttendDriverInfo = function() {
+  const id = document.getElementById('attendDriver').value;
+  const wrap = document.getElementById('attendDriverInfo');
+  if(!id){ wrap.style.display='none'; return; }
+  const d = drivers[id];
+  document.getElementById('adPhone').textContent = d.phone||'—';
+  document.getElementById('adPlate').textContent = d.plate||'—';
+  document.getElementById('adBus').textContent = d.busSign||'—';
+  wrap.style.display='block';
+}
+
+let selectedShift='';
+window.selectShift = function(el,val) {
+  document.querySelectorAll('.shift-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected'); selectedShift=val;
+  document.getElementById('customTimeRow').style.display = val==='custom'?'block':'none';
 }
 
 window.saveAttendance = function() {
   const driverId = document.getElementById('attendDriver').value;
   const date = document.getElementById('attendDate').value;
+  const route = document.getElementById('attendRoute').value.trim();
   const note = document.getElementById('attendNote').value.trim();
-  if (!driverId) return alert('اختر سائق');
-  if (!selectedShift) return alert('اختر وقت الانصراف');
+  if(!driverId) return alert(t('اختر سائق','Select a driver'));
+  if(!selectedShift) return alert(t('اختر وقت الانصراف','Select end time'));
   let endTime = selectedShift;
-  if (selectedShift === 'custom') { endTime = document.getElementById('customTime').value; if (!endTime) return alert('اكتب الوقت'); }
+  if(selectedShift==='custom'){ endTime=document.getElementById('customTime').value; if(!endTime) return alert(t('اكتب الوقت','Enter time')); }
   const driver = drivers[driverId];
-  const bus = driver?.busId ? buses[driver.busId] : null;
-  const shiftLabel = {'12:30':'نص يوم','14:00':'شغل عادي','21:00':'شغل إضافي','custom':'وقت محدد'}[selectedShift] || selectedShift;
-  push(ref(db, 'attendance'), { driverId, date, startTime:'07:30', endTime, shiftType:shiftLabel, driverName:driver?.name||'', busPlate:bus?.plate||'', note, timestamp:Date.now() });
-  document.getElementById('attendNote').value = '';
-  document.querySelectorAll('.shift-opt').forEach(o => o.classList.remove('selected'));
-  selectedShift = '';
-  document.getElementById('customTimeRow').style.display = 'none';
-  toast('تم تسجيل الحضور ✓');
+  const shiftLabel = {'12:30':t('نص يوم','Half Day'),'14:00':t('شغل عادي','Normal'),'21:00':t('شغل إضافي','Extra'),'custom':t('وقت محدد','Custom')}[selectedShift]||selectedShift;
+  push(ref(db,'attendance'),{
+    driverId, date, startTime:'07:30', endTime, shiftType:shiftLabel,
+    driverName:driver?.name||'', plate:driver?.plate||'', busSign:driver?.busSign||'',
+    route, note, timestamp:Date.now()
+  });
+  ['attendNote','attendRoute'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('.shift-opt').forEach(o=>o.classList.remove('selected'));
+  selectedShift='';
+  document.getElementById('customTimeRow').style.display='none';
+  document.getElementById('attendDriverInfo').style.display='none';
+  toast(t('تم تسجيل الحضور ✓','Attendance saved ✓'));
 }
 
 window.deleteAttend = function(id) {
-  if (!confirm('مسح هذا السجل؟')) return;
-  remove(ref(db, 'attendance/' + id));
+  if(!confirm(t('مسح السجل؟','Delete record?'))) return;
+  remove(ref(db,'attendance/'+id));
 }
 
-window.clearDateFilter = function() {
-  document.getElementById('filterDate').value = '';
-  renderAttendance();
-}
-
-function shiftBadge(s) { return s==='نص يوم'?'badge-amber':s==='شغل عادي'?'badge-blue':s==='شغل إضافي'?'badge-red':'badge-green'; }
+window.clearFilter = function() { document.getElementById('filterDate').value=''; renderAttendance(); }
 
 function renderAttendance() {
   const filterDate = document.getElementById('filterDate')?.value;
-  let rows = Object.entries(attendance).sort((a,b) => b[1].timestamp - a[1].timestamp);
-  if (filterDate) rows = rows.filter(([,a]) => a.date === filterDate);
+  let rows = Object.entries(attendance).sort((a,b)=>b[1].timestamp-a[1].timestamp);
+  if(filterDate) rows=rows.filter(([,a])=>a.date===filterDate);
   const el = document.getElementById('attendanceTable');
-  if (!rows.length) { el.innerHTML = '<div class="empty-state">لا يوجد سجلات</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>السائق</th><th>الباص</th><th>التاريخ</th><th>البداية</th><th>النهاية</th><th>النوع</th><th>ملاحظات</th><th></th></tr></thead><tbody>
-    ${rows.map(([id,a]) => `<tr>
-      <td><b>${a.driverName}</b></td>
-      <td>${a.busPlate?`<span class="badge badge-amber">${a.busPlate}</span>`:'—'}</td>
-      <td>${formatDate(a.date)}</td>
-      <td><span class="badge badge-green">7:30 ص</span></td>
-      <td><b style="color:var(--gold)">${formatTime(a.endTime)}</b></td>
-      <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
-      <td style="color:var(--muted);font-size:0.85rem">${a.note||'—'}</td>
-      <td><button class="btn btn-danger" onclick="deleteAttend('${id}')">مسح</button></td>
-    </tr>`).join('')}</tbody></table>`;
+  if(!rows.length){ el.innerHTML=`<div class="empty-state">${t('لا يوجد سجلات','No records')}</div>`; return; }
+  el.innerHTML=`<table><thead><tr>
+    <th>${t('السائق','Driver')}</th><th>${t('اللوحة','Plate')}</th><th>${t('التاريخ','Date')}</th>
+    <th>${t('البداية','Start')}</th><th>${t('النهاية','End')}</th>
+    <th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th><th>${t('ملاحظات','Notes')}</th><th></th>
+  </tr></thead><tbody>
+  ${rows.map(([id,a])=>`<tr>
+    <td><b>${a.driverName}</b></td>
+    <td><span class="badge badge-orange">${a.plate||'—'}</span></td>
+    <td>${formatDate(a.date)}</td>
+    <td><span class="badge badge-green">7:30 ص</span></td>
+    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
+    <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
+    <td style="font-size:0.82rem;color:var(--muted)">${a.route||'—'}</td>
+    <td style="font-size:0.82rem;color:var(--muted)">${a.note||'—'}</td>
+    <td><button class="btn btn-danger" onclick="deleteAttend('${id}')">${t('مسح','Del')}</button></td>
+  </tr>`).join('')}</tbody></table>`;
 }
 
+// ===== DASHBOARD =====
 function renderDashboard() {
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
-  const todayAttend = Object.values(attendance).filter(a => a.date === today);
-  document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card"><div class="stat-num">${Object.keys(buses).length}</div><div class="stat-label">إجمالي الباصات</div></div>
-    <div class="stat-card"><div class="stat-num">${Object.keys(drivers).length}</div><div class="stat-label">إجمالي السائقين</div></div>
-    <div class="stat-card"><div class="stat-num">${todayAttend.length}</div><div class="stat-label">حضور اليوم</div></div>
-    <div class="stat-card"><div class="stat-num">${todayAttend.filter(a=>a.shiftType==='شغل إضافي').length}</div><div class="stat-label">شغل إضافي اليوم</div></div>`;
+  const today = new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Cairo'});
+  const todayA = Object.values(attendance).filter(a=>a.date===today);
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${Object.keys(drivers).length}</div><div class="stat-label">${t('إجمالي السائقين','Total Drivers')}</div></div>
+    <div class="stat-card"><div class="stat-num">${todayA.length}</div><div class="stat-label">${t('حضور اليوم','Today Attendance')}</div></div>
+    <div class="stat-card"><div class="stat-num">${todayA.filter(a=>a.shiftType===t('شغل إضافي','Extra')||a.shiftType==='Extra'||a.shiftType==='شغل إضافي').length}</div><div class="stat-label">${t('شغل إضافي اليوم','Extra Shifts Today')}</div></div>
+    <div class="stat-card"><div class="stat-num">${todayA.filter(a=>a.shiftType===t('نص يوم','Half Day')||a.shiftType==='نص يوم'||a.shiftType==='Half Day').length}</div><div class="stat-label">${t('نص يوم اليوم','Half Days Today')}</div></div>`;
   const el = document.getElementById('todayTable');
-  if (!todayAttend.length) { el.innerHTML = '<div class="empty-state">لا يوجد تسجيل حضور اليوم</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>السائق</th><th>الباص</th><th>بداية الشغل</th><th>نهاية الشغل</th><th>النوع</th><th>ملاحظات</th></tr></thead><tbody>
-    ${[...todayAttend].reverse().map(a => `<tr>
-      <td><b>${a.driverName}</b></td>
-      <td>${a.busPlate?`<span class="badge badge-amber">${a.busPlate}</span>`:'—'}</td>
-      <td><span class="badge badge-green">7:30 ص</span></td>
-      <td><b style="color:var(--gold)">${formatTime(a.endTime)}</b></td>
-      <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
-      <td style="color:var(--muted);font-size:0.85rem">${a.note||'—'}</td>
-    </tr>`).join('')}</tbody></table>`;
+  if(!todayA.length){ el.innerHTML=`<div class="empty-state">${t('لا يوجد حضور اليوم','No attendance today')}</div>`; return; }
+  el.innerHTML=`<table><thead><tr>
+    <th>${t('السائق','Driver')}</th><th>${t('اللوحة','Plate')}</th><th>${t('الباص','Bus')}</th>
+    <th>${t('البداية','Start')}</th><th>${t('النهاية','End')}</th>
+    <th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th>
+  </tr></thead><tbody>
+  ${[...todayA].reverse().map(a=>`<tr>
+    <td><b>${a.driverName}</b></td>
+    <td><span class="badge badge-orange">${a.plate||'—'}</span></td>
+    <td><span class="badge badge-blue">${a.busSign||'—'}</span></td>
+    <td><span class="badge badge-green">7:30 ص</span></td>
+    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
+    <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
+    <td style="font-size:0.82rem;color:var(--muted)">${a.route||'—'}</td>
+  </tr>`).join('')}</tbody></table>`;
 }
 
+// ===== REPORTS =====
 function renderReports() {
-  const el = document.getElementById('reportContent');
-  const counts = {};
-  Object.values(attendance).forEach(a => {
-    if (!counts[a.driverName]) counts[a.driverName] = {total:0,half:0,normal:0,extra:0,custom:0};
+  renderDriverReport();
+  const counts={};
+  Object.values(attendance).forEach(a=>{
+    if(!counts[a.driverName]) counts[a.driverName]={total:0,half:0,normal:0,extra:0,custom:0};
     counts[a.driverName].total++;
-    if (a.shiftType==='نص يوم') counts[a.driverName].half++;
-    else if (a.shiftType==='شغل عادي') counts[a.driverName].normal++;
-    else if (a.shiftType==='شغل إضافي') counts[a.driverName].extra++;
+    const s=a.shiftType;
+    if(s==='نص يوم'||s==='Half Day') counts[a.driverName].half++;
+    else if(s==='شغل عادي'||s==='Normal') counts[a.driverName].normal++;
+    else if(s==='شغل إضافي'||s==='Extra') counts[a.driverName].extra++;
     else counts[a.driverName].custom++;
   });
-  const names = Object.keys(counts);
-  if (!names.length) { el.innerHTML = '<div class="empty-state">لا يوجد بيانات بعد</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>السائق</th><th>إجمالي أيام</th><th>نص يوم</th><th>شغل عادي</th><th>شغل إضافي</th><th>وقت محدد</th></tr></thead><tbody>
-    ${names.map(n => `<tr><td><b>${n}</b></td><td><span class="badge badge-blue">${counts[n].total}</span></td>
+  const names=Object.keys(counts);
+  const el=document.getElementById('allReportsTable');
+  if(!names.length){ el.innerHTML=`<div class="empty-state">${t('لا يوجد بيانات','No data')}</div>`; return; }
+  el.innerHTML=`<table><thead><tr>
+    <th>${t('السائق','Driver')}</th><th>${t('إجمالي','Total')}</th>
+    <th>${t('نص يوم','Half Day')}</th><th>${t('عادي','Normal')}</th>
+    <th>${t('إضافي','Extra')}</th><th>${t('وقت محدد','Custom')}</th>
+  </tr></thead><tbody>
+  ${names.map(n=>`<tr>
+    <td><b>${n}</b></td>
+    <td><span class="badge badge-blue">${counts[n].total}</span></td>
     <td>${counts[n].half||'—'}</td><td>${counts[n].normal||'—'}</td>
     <td>${counts[n].extra?`<b style="color:var(--red)">${counts[n].extra}</b>`:'—'}</td>
-    <td>${counts[n].custom||'—'}</td></tr>`).join('')}</tbody></table>`;
+    <td>${counts[n].custom||'—'}</td>
+  </tr>`).join('')}</tbody></table>`;
 }
 
-function formatDate(d) {
-  if (!d) return '—';
-  const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`;
+window.renderDriverReport = function() {
+  const id = document.getElementById('reportDriverSelect').value;
+  const rp = document.getElementById('reportDriverProfile');
+  const rc = document.getElementById('reportContent');
+  if(!id){ rp.innerHTML=''; rc.innerHTML=''; return; }
+  const d = drivers[id];
+  rp.innerHTML=`<div class="driver-profile">
+    <div class="dp-name">👤 ${d.name}</div>
+    <div class="dp-grid">
+      <div class="dp-item">${t('التليفون','Phone')}<b>${d.phone||'—'}</b></div>
+      <div class="dp-item">${t('اللوحة','Plate')}<b>${d.plate||'—'}</b></div>
+      <div class="dp-item">${t('الباص','Bus Sign')}<b>${d.busSign||'—'}</b></div>
+      <div class="dp-item">${t('المجموعة','Group')}<b>${d.group||'—'}</b></div>
+    </div>
+  </div>`;
+  const rows=Object.entries(attendance).filter(([,a])=>a.driverId===id).sort((a,b)=>b[1].timestamp-a[1].timestamp);
+  if(!rows.length){ rc.innerHTML=`<div class="empty-state">${t('لا يوجد حضور','No attendance records')}</div>`; return; }
+  rc.innerHTML=`<div class="table-wrap"><table><thead><tr>
+    <th>${t('التاريخ','Date')}</th><th>${t('البداية','Start')}</th><th>${t('النهاية','End')}</th>
+    <th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th><th>${t('ملاحظات','Notes')}</th>
+  </tr></thead><tbody>
+  ${rows.map(([,a])=>`<tr>
+    <td>${formatDate(a.date)}</td>
+    <td><span class="badge badge-green">7:30 ص</span></td>
+    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
+    <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
+    <td style="font-size:0.82rem;color:var(--muted)">${a.route||'—'}</td>
+    <td style="font-size:0.82rem;color:var(--muted)">${a.note||'—'}</td>
+  </tr>`).join('')}</tbody></table></div>`;
 }
-function formatTime(t) {
-  if (!t) return '—';
-  const [h,m] = t.split(':'); const hour = parseInt(h);
-  return `${hour>12?hour-12:hour===0?12:hour}:${m} ${hour>=12?'م':'ص'}`;
-}
+
+// ===== HELPERS =====
+function shiftBadge(s){ return (s==='نص يوم'||s==='Half Day')?'badge-amber':(s==='شغل عادي'||s==='Normal')?'badge-blue':(s==='شغل إضافي'||s==='Extra')?'badge-red':'badge-green'; }
+function formatDate(d){ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+function formatTime(t){ if(!t) return '—'; const [h,m]=t.split(':'); const hr=parseInt(h); return `${hr>12?hr-12:hr===0?12:hr}:${m} ${hr>=12?'م':'ص'}`; }
+
+function renderAll(){ renderDashboard(); renderAttendance(); renderAllDrivers(); }
 </script>
 </body>
 </html>
