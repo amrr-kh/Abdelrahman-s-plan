@@ -189,14 +189,7 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
       <div class="form-group"><label data-ar="رقم التليفون المصري" data-en="Egyptian Phone Number">رقم التليفون المصري</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx"/></div>
       <div class="form-group"><label data-ar="رقم لوحة العربية (مصري)" data-en="Egyptian Plate Number">رقم لوحة العربية (مصري)</label><input type="text" id="driverPlate" placeholder="أ ب ج ١٢٣٤"/></div>
       <div class="form-group"><label data-ar="رقم / علامة الباص" data-en="Bus Number / Sign">رقم / علامة الباص</label><input type="text" id="driverBusSign" placeholder="مثال: B12"/></div>
-      <div class="form-group"><label data-ar="رقم رخصة القيادة" data-en="License Number">رقم رخصة القيادة</label><input type="text" id="driverLicense"/></div>
-      <div class="form-group"><label data-ar="المجموعة" data-en="Group">المجموعة</label>
-        <select id="driverGroup">
-          <option value="" data-ar="اختر المجموعة" data-en="Select Group">اختر المجموعة</option>
-          <option>مجموعة أ / Group A</option><option>مجموعة ب / Group B</option>
-          <option>مجموعة ج / Group C</option><option>مجموعة د / Group D</option>
-        </select>
-      </div>
+
     </div>
     <br/>
     <button class="btn btn-primary" onclick="addDriver()" style="width:100%" data-ar="إضافة السائق" data-en="Add Driver">إضافة السائق</button>
@@ -461,17 +454,15 @@ window.addDriver = function() {
     phone: document.getElementById('driverPhone').value.trim(),
     plate: document.getElementById('driverPlate').value.trim(),
     busSign: document.getElementById('driverBusSign').value.trim(),
-    license: document.getElementById('driverLicense').value.trim(),
-    group: document.getElementById('driverGroup').value
   });
-  ['driverName','driverPhone','driverPlate','driverBusSign','driverLicense'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('driverGroup').value='';
+  ['driverName','driverPhone','driverPlate','driverBusSign'].forEach(id=>document.getElementById(id).value='');
   closeModal();
   toast(t('تم إضافة السائق ✓','Driver added ✓'));
 }
 
 window.deleteDriver = function(id) {
-  if(!confirm(t('مسح السائق؟','Delete driver?'))) return;
+  const pin = prompt(t('أدخل كود المسح للتأكيد','Enter delete PIN to confirm'));
+  if(pin !== '4244') { alert(t('كود غلط!','Wrong PIN!')); return; }
   remove(ref(db,'drivers/'+id));
 }
 
@@ -482,13 +473,12 @@ function renderAllDrivers() {
   el.innerHTML=`<table><thead><tr>
     <th>${t('الاسم','Name')}</th><th>${t('التليفون','Phone')}</th>
     <th>${t('اللوحة','Plate')}</th><th>${t('الباص','Bus')}</th>
-    <th>${t('المجموعة','Group')}</th><th></th>
+    <th></th>
   </tr></thead><tbody>
   ${list.map(([id,d])=>`<tr>
     <td><b>${d.name}</b></td><td>${d.phone||'—'}</td>
     <td><span class="badge badge-orange">${d.plate||'—'}</span></td>
     <td><span class="badge badge-blue">${d.busSign||'—'}</span></td>
-    <td>${d.group||'—'}</td>
     <td><button class="btn btn-danger" onclick="deleteDriver('${id}')">${t('مسح','Delete')}</button></td>
   </tr>`).join('')}</tbody></table>`;
   refreshSelects();
@@ -517,7 +507,6 @@ window.loadDriverProfile = function() {
       <div class="dp-item">${t('اللوحة','Plate')}<b>${d.plate||'—'}</b></div>
       <div class="dp-item">${t('الباص','Bus Sign')}<b>${d.busSign||'—'}</b></div>
       <div class="dp-item">${t('الرخصة','License')}<b>${d.license||'—'}</b></div>
-      <div class="dp-item">${t('المجموعة','Group')}<b>${d.group||'—'}</b></div>
     </div>
   </div>`;
   // Attendance for this driver
@@ -582,7 +571,8 @@ window.saveAttendance = function() {
 }
 
 window.deleteAttend = function(id) {
-  if(!confirm(t('مسح السجل؟','Delete record?'))) return;
+  const pin = prompt(t('أدخل كود المسح للتأكيد','Enter delete PIN to confirm'));
+  if(pin !== '4244') { alert(t('كود غلط!','Wrong PIN!')); return; }
   remove(ref(db,'attendance/'+id));
 }
 
@@ -681,7 +671,6 @@ window.renderDriverReport = function() {
       <div class="dp-item">${t('التليفون','Phone')}<b>${d.phone||'—'}</b></div>
       <div class="dp-item">${t('اللوحة','Plate')}<b>${d.plate||'—'}</b></div>
       <div class="dp-item">${t('الباص','Bus Sign')}<b>${d.busSign||'—'}</b></div>
-      <div class="dp-item">${t('المجموعة','Group')}<b>${d.group||'—'}</b></div>
     </div>
   </div>`;
   const rows=Object.entries(attendance).filter(([,a])=>a.driverId===id).sort((a,b)=>b[1].timestamp-a[1].timestamp);
