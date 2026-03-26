@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام نقل سياحي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --dark: #0d0d0d;
+    --panel: #161616;
+    --card: #1e1e1e;
+    --border: #2e2e2e;
+    --text: #f0ead6;
+    --muted: #888;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --amber: #f39c12;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Cairo', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+
+  #lockScreen {
+    position: fixed; inset: 0; background: var(--dark);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; flex-direction: column; gap: 2rem;
+  }
+  .lock-logo { font-size: 3rem; font-weight: 900; color: var(--gold); letter-spacing: 2px; text-align: center; }
+  .lock-logo span { display: block; font-size: 1rem; color: var(--muted); font-weight: 400; }
+  .lock-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 340px; text-align: center; }
+  .lock-box h2 { color: var(--gold); margin-bottom: 1.5rem; font-size: 1.1rem; }
+  .lock-input { width: 100%; padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Cairo', sans-serif; font-size: 1.1rem; text-align: center; letter-spacing: 4px; margin-bottom: 1rem; }
+  .lock-input:focus { outline: none; border-color: var(--gold); }
+  .lock-btn { width: 100%; padding: 12px; background: var(--gold); color: var(--dark); border: none; border-radius: 8px; font-family: 'Cairo', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; }
+  .lock-error { color: var(--red); font-size: 0.9rem; margin-top: 0.5rem; display: none; }
+
+  header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 1.4rem; font-weight: 900; color: var(--gold); }
+  .logo span { color: var(--text); font-weight: 400; font-size: 0.9rem; display: block; }
+  .egypt-time { text-align: left; font-size: 0.85rem; color: var(--muted); }
+  .egypt-time b { color: var(--gold); font-size: 1.1rem; display: block; }
+
+  nav { background: var(--panel); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; gap: 0; overflow-x: auto; }
+  .nav-btn { padding: 14px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--muted); font-family: 'Cairo', sans-serif; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .card-title { font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 0.85rem; color: var(--muted); }
+  .form-group input, .form-group select { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: 'Cairo', sans-serif; font-size: 0.95rem; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--gold); }
+  .form-group select option { background: var(--panel); }
+
+  .btn { padding: 10px 24px; border-radius: 8px; border: none; font-family: 'Cairo', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--gold); color: var(--dark); }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); font-size: 0.8rem; padding: 5px 12px; }
+  .btn-danger:hover { background: var(--red); color: white; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; text-align: center; }
+  .stat-num { font-size: 2rem; font-weight: 900; color: var(--gold); }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: var(--panel); color: var(--muted); padding: 10px 14px; text-align: right; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.78rem; font-weight: 600; }
+  .badge-green { background: rgba(46,204,113,0.15); color: var(--green); }
+  .badge-red { background: rgba(231,76,60,0.15); color: var(--red); }
+  .badge-amber { background: rgba(243,156,18,0.15); color: var(--amber); }
+  .badge-blue { background: rgba(52,152,219,0.15); color: #3498db; }
+
+  .shift-options { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .shift-opt { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 0.9rem; background: var(--panel); color: var(--muted); transition: all 0.2s; }
+  .shift-opt.selected { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+
+  .attend-header { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+  #toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--gold); color: var(--dark); padding: 12px 28px; border-radius: 8px; font-weight: 700; transition: transform 0.3s; z-index: 9999; pointer-events: none; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  #loadingOverlay { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 500; flex-direction: column; gap: 1rem; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; color: var(--muted); padding: 3rem; font-size: 0.95rem; }
+
+  @media (max-width: 600px) {
+    main { padding: 1rem; }
+    header { padding: 1rem; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <span style="color:var(--gold)">جاري تحميل البيانات...</span>
+</div>
+
+<div id="lockScreen" style="display:none">
+  <div class="lock-logo">🚌 نقل سياحي <span>نظام إدارة السائقين والرحلات</span></div>
+  <div class="lock-box">
+    <h2>🔐 أدخل الكود السري</h2>
+    <input class="lock-input" type="password" id="pinInput" placeholder="••••••" maxlength="6" />
+    <button class="lock-btn" onclick="checkPin()">دخول</button>
+    <div class="lock-error" id="lockError">❌ الكود غلط، حاول تاني</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">🚌 نقل سياحي <span>نظام إدارة الرحلات</span></div>
+  <div class="egypt-time">
+    <b id="clockDisplay">--:--:--</b>
+    <span>التوقيت المصري</span>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="showPage('dashboard', this)">📊 الرئيسية</button>
+  <button class="nav-btn" onclick="showPage('buses', this)">🚌 الباصات</button>
+  <button class="nav-btn" onclick="showPage('drivers', this)">👤 السائقين</button>
+  <button class="nav-btn" onclick="showPage('attendance', this)">📋 الحضور</button>
+  <button class="nav-btn" onclick="showPage('reports', this)">📈 التقارير</button>
+</nav>
+
+<main>
+  <div class="page active" id="page-dashboard">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="card">
+      <div class="card-title">📋 سجل الحضور اليوم</div>
+      <div class="table-wrap" id="todayTable"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-buses">
+    <div class="card">
+      <div class="card-title">➕ إضافة باص جديد</div>
+      <div class="form-grid">
+        <div class="form-group"><label>رقم لوحة الباص (مصري)</label><input type="text" id="busPlate" placeholder="مثال: أ ب ج ١٢٣٤" /></div>
+        <div class="form-group"><label>نوع الباص</label>
+          <select id="busType"><option value="">اختر النوع</option><option>ميني باص</option><option>ميكروباص</option><option>باص متوسط</option><option>باص كبير</option><option>كوستر</option></select>
+        </div>
+        <div class="form-group"><label>سعة الركاب</label><input type="number" id="busCap" placeholder="عدد الركاب" /></div>
+        <div class="form-group"><label>المجموعة</label>
+          <select id="busGroup"><option value="">اختر المجموعة</option><option>مجموعة أ</option><option>مجموعة ب</option><option>مجموعة ج</option><option>مجموعة د</option></select>
+        </div>
+        <div class="form-group"><label>مسؤول المجموعة</label><input type="text" id="busManager" placeholder="اسم المسؤول" /></div>
+      </div>
+      <br/><button class="btn btn-primary" onclick="addBus()">إضافة الباص</button>
+    </div>
+    <div class="card"><div class="card-title">🚌 قائمة الباصات</div><div class="table-wrap" id="busesTable"></div></div>
+  </div>
+
+  <div class="page" id="page-drivers">
+    <div class="card">
+      <div class="card-title">➕ إضافة سائق جديد</div>
+      <div class="form-grid">
+        <div class="form-group"><label>اسم السائق</label><input type="text" id="driverName" placeholder="الاسم كامل" /></div>
+        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx" /></div>
+        <div class="form-group"><label>الباص المخصص</label><select id="driverBus"></select></div>
+        <div class="form-group"><label>رقم رخصة القيادة</label><input type="text" id="driverLicense" placeholder="رقم الرخصة" /></div>
+      </div>
+      <br/><button class="btn btn-primary" onclick="addDriver()">إضافة السائق</button>
+    </div>
+    <div class="card"><div class="card-title">👤 قائمة السائقين</div><div class="table-wrap" id="driversTable"></div></div>
+  </div>
+
+  <div class="page" id="page-attendance">
+    <div class="card">
+      <div class="card-title">📋 تسجيل الحضور والانصراف</div>
+      <div class="attend-header">
+        <div class="form-group" style="min-width:200px"><label>التاريخ</label><input type="date" id="attendDate" /></div>
+        <div class="form-group" style="min-width:200px"><label>اختر السائق</label><select id="attendDriver"></select></div>
+      </div>
+      <div class="form-group" style="margin-bottom:1rem">
+        <label>وقت الانصراف</label>
+        <div class="shift-options">
+          <div class="shift-opt" onclick="selectShift(this,'12:30')">🌤 نص يوم — 12:30 ظ</div>
+          <div class="shift-opt" onclick="selectShift(this,'14:00')">☀️ شغل عادي — 2:00 م</div>
+          <div class="shift-opt" onclick="selectShift(this,'21:00')">🌙 شغل إضافي — 9:00 م</div>
+          <div class="shift-opt" onclick="selectShift(this,'custom')">⏰ وقت تاني</div>
+        </div>
+      </div>
+      <div id="customTimeRow" style="display:none; margin-bottom:1rem;">
+        <div class="form-group" style="max-width:200px"><label>حدد الوقت</label><input type="time" id="customTime" /></div>
+      </div>
+      <div class="form-group" style="margin-bottom:1.5rem; max-width:400px">
+        <label>ملاحظات (اختياري)</label><input type="text" id="attendNote" placeholder="أي ملاحظات..." />
+      </div>
+      <button class="btn btn-primary" onclick="saveAttendance()">حفظ الحضور</button>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 سجل الحضور</div>
+      <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; align-items:flex-end;">
+        <div class="form-group" style="min-width:180px"><label>فلتر بالتاريخ</label><input type="date" id="filterDate" onchange="renderAttendance()" /></div>
+        <button class="btn btn-primary" style="height:42px;" onclick="clearDateFilter()">كل السجلات</button>
+      </div>
+      <div class="table-wrap" id="attendanceTable"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-reports">
+    <div class="card"><div class="card-title">📈 تقرير شامل</div><div id="reportContent"></div></div>
+  </div>
+</main>
+
+<div id="toast">تم الحفظ ✓</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const SECRET_PIN = "1234";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDtY0yMhxgtog1fzyb7Qqurcge68iM2T3E",
+  authDomain: "abdelrahman-transport.firebaseapp.com",
+  databaseURL: "https://abdelrahman-transport-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "abdelrahman-transport",
+  storageBucket: "abdelrahman-transport.firebasestorage.app",
+  messagingSenderId: "219656259545",
+  appId: "1:219656259545:web:07eaae9d9b804c20243bc8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let buses = {}, drivers = {}, attendance = {};
+let dataLoaded = 0;
+
+function checkAllLoaded() {
+  dataLoaded++;
+  if (dataLoaded >= 3) {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('lockScreen').style.display = 'flex';
+  }
+}
+
+onValue(ref(db, 'buses'), snap => { buses = snap.val() || {}; renderBuses(); refreshDriverSelects(); renderDashboard(); checkAllLoaded(); });
+onValue(ref(db, 'drivers'), snap => { drivers = snap.val() || {}; renderDrivers(); refreshDriverSelects(); renderDashboard(); checkAllLoaded(); });
+onValue(ref(db, 'attendance'), snap => { attendance = snap.val() || {}; renderAttendance(); renderDashboard(); checkAllLoaded(); });
+
+window.checkPin = function() {
+  const val = document.getElementById('pinInput').value;
+  if (val === SECRET_PIN) {
+    document.getElementById('lockScreen').style.display = 'none';
+    setTodayDate(); startClock();
+  } else {
+    document.getElementById('lockError').style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    setTimeout(() => document.getElementById('lockError').style.display = 'none', 3000);
+  }
+}
+document.getElementById('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.checkPin(); });
+
+function startClock() {
+  function update() {
+    document.getElementById('clockDisplay').textContent = new Date().toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour12: true });
+  }
+  update(); setInterval(update, 1000);
+}
+
+function setTodayDate() {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+  document.getElementById('attendDate').value = today;
+  document.getElementById('filterDate').value = today;
+}
+
+window.showPage = function(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'reports') renderReports();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+window.addBus = function() {
+  const plate = document.getElementById('busPlate').value.trim();
+  const type = document.getElementById('busType').value;
+  if (!plate || !type) return alert('اكتب رقم اللوحة ونوع الباص');
+  push(ref(db, 'buses'), {
+    plate, type,
+    cap: document.getElementById('busCap').value,
+    group: document.getElementById('busGroup').value,
+    manager: document.getElementById('busManager').value.trim()
+  });
+  ['busPlate','busCap','busManager'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('busType').value = '';
+  document.getElementById('busGroup').value = '';
+  toast('تم إضافة الباص ✓');
+}
+
+window.deleteBus = function(id) {
+  if (!confirm('مسح الباص؟')) return;
+  remove(ref(db, 'buses/' + id));
+}
+
+function renderBuses() {
+  const el = document.getElementById('busesTable');
+  const list = Object.entries(buses);
+  if (!list.length) { el.innerHTML = '<div class="empty-state">لا يوجد باصات مضافة</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>اللوحة</th><th>النوع</th><th>السعة</th><th>المجموعة</th><th>المسؤول</th><th></th></tr></thead><tbody>
+    ${list.map(([id,b]) => `<tr>
+      <td><b style="color:var(--gold)">${b.plate}</b></td><td>${b.type}</td><td>${b.cap||'—'}</td>
+      <td>${b.group?`<span class="badge badge-blue">${b.group}</span>`:'—'}</td>
+      <td>${b.manager||'—'}</td>
+      <td><button class="btn btn-danger" onclick="deleteBus('${id}')">مسح</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+window.addDriver = function() {
+  const name = document.getElementById('driverName').value.trim();
+  if (!name) return alert('اكتب اسم السائق');
+  push(ref(db, 'drivers'), {
+    name, phone: document.getElementById('driverPhone').value.trim(),
+    busId: document.getElementById('driverBus').value,
+    license: document.getElementById('driverLicense').value.trim()
+  });
+  ['driverName','driverPhone','driverLicense'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('driverBus').value = '';
+  toast('تم إضافة السائق ✓');
+}
+
+window.deleteDriver = function(id) {
+  if (!confirm('مسح السائق؟')) return;
+  remove(ref(db, 'drivers/' + id));
+}
+
+function renderDrivers() {
+  const el = document.getElementById('driversTable');
+  const list = Object.entries(drivers);
+  if (!list.length) { el.innerHTML = '<div class="empty-state">لا يوجد سائقين مضافين</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>الاسم</th><th>الهاتف</th><th>الباص</th><th>الرخصة</th><th></th></tr></thead><tbody>
+    ${list.map(([id,d]) => {
+      const bus = d.busId ? buses[d.busId] : null;
+      return `<tr><td><b>${d.name}</b></td><td>${d.phone||'—'}</td>
+        <td>${bus?`<span class="badge badge-amber">${bus.plate}</span>`:'—'}</td>
+        <td>${d.license||'—'}</td>
+        <td><button class="btn btn-danger" onclick="deleteDriver('${id}')">مسح</button></td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function refreshDriverSelects() {
+  const busList = Object.entries(buses);
+  const driverList = Object.entries(drivers);
+  const db2 = document.getElementById('driverBus');
+  const ad = document.getElementById('attendDriver');
+  if (db2) db2.innerHTML = `<option value="">بدون باص</option>` + busList.map(([id,b]) => `<option value="${id}">${b.plate} — ${b.type}</option>`).join('');
+  if (ad) ad.innerHTML = `<option value="">اختر سائق</option>` + driverList.map(([id,d]) => `<option value="${id}">${d.name}</option>`).join('');
+}
+
+let selectedShift = '';
+window.selectShift = function(el, val) {
+  document.querySelectorAll('.shift-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected'); selectedShift = val;
+  document.getElementById('customTimeRow').style.display = val === 'custom' ? 'block' : 'none';
+}
+
+window.saveAttendance = function() {
+  const driverId = document.getElementById('attendDriver').value;
+  const date = document.getElementById('attendDate').value;
+  const note = document.getElementById('attendNote').value.trim();
+  if (!driverId) return alert('اختر سائق');
+  if (!selectedShift) return alert('اختر وقت الانصراف');
+  let endTime = selectedShift;
+  if (selectedShift === 'custom') { endTime = document.getElementById('customTime').value; if (!endTime) return alert('اكتب الوقت'); }
+  const driver = drivers[driverId];
+  const bus = driver?.busId ? buses[driver.busId] : null;
+  const shiftLabel = {'12:30':'نص يوم','14:00':'شغل عادي','21:00':'شغل إضافي','custom':'وقت محدد'}[selectedShift] || selectedShift;
+  push(ref(db, 'attendance'), { driverId, date, startTime:'07:30', endTime, shiftType:shiftLabel, driverName:driver?.name||'', busPlate:bus?.plate||'', note, timestamp:Date.now() });
+  document.getElementById('attendNote').value = '';
+  document.querySelectorAll('.shift-opt').forEach(o => o.classList.remove('selected'));
+  selectedShift = '';
+  document.getElementById('customTimeRow').style.display = 'none';
+  toast('تم تسجيل الحضور ✓');
+}
+
+window.deleteAttend = function(id) {
+  if (!confirm('مسح هذا السجل؟')) return;
+  remove(ref(db, 'attendance/' + id));
+}
+
+window.clearDateFilter = function() {
+  document.getElementById('filterDate').value = '';
+  renderAttendance();
+}
+
+function shiftBadge(s) { return s==='نص يوم'?'badge-amber':s==='شغل عادي'?'badge-blue':s==='شغل إضافي'?'badge-red':'badge-green'; }
+
+function renderAttendance() {
+  const filterDate = document.getElementById('filterDate')?.value;
+  let rows = Object.entries(attendance).sort((a,b) => b[1].timestamp - a[1].timestamp);
+  if (filterDate) rows = rows.filter(([,a]) => a.date === filterDate);
+  const el = document.getElementById('attendanceTable');
+  if (!rows.length) { el.innerHTML = '<div class="empty-state">لا يوجد سجلات</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>السائق</th><th>الباص</th><th>التاريخ</th><th>البداية</th><th>النهاية</th><th>النوع</th><th>ملاحظات</th><th></th></tr></thead><tbody>
+    ${rows.map(([id,a]) => `<tr>
+      <td><b>${a.driverName}</b></td>
+      <td>${a.busPlate?`<span class="badge badge-amber">${a.busPlate}</span>`:'—'}</td>
+      <td>${formatDate(a.date)}</td>
+      <td><span class="badge badge-green">7:30 ص</span></td>
+      <td><b style="color:var(--gold)">${formatTime(a.endTime)}</b></td>
+      <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
+      <td style="color:var(--muted);font-size:0.85rem">${a.note||'—'}</td>
+      <td><button class="btn btn-danger" onclick="deleteAttend('${id}')">مسح</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderDashboard() {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+  const todayAttend = Object.values(attendance).filter(a => a.date === today);
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${Object.keys(buses).length}</div><div class="stat-label">إجمالي الباصات</div></div>
+    <div class="stat-card"><div class="stat-num">${Object.keys(drivers).length}</div><div class="stat-label">إجمالي السائقين</div></div>
+    <div class="stat-card"><div class="stat-num">${todayAttend.length}</div><div class="stat-label">حضور اليوم</div></div>
+    <div class="stat-card"><div class="stat-num">${todayAttend.filter(a=>a.shiftType==='شغل إضافي').length}</div><div class="stat-label">شغل إضافي اليوم</div></div>`;
+  const el = document.getElementById('todayTable');
+  if (!todayAttend.length) { el.innerHTML = '<div class="empty-state">لا يوجد تسجيل حضور اليوم</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>السائق</th><th>الباص</th><th>بداية الشغل</th><th>نهاية الشغل</th><th>النوع</th><th>ملاحظات</th></tr></thead><tbody>
+    ${[...todayAttend].reverse().map(a => `<tr>
+      <td><b>${a.driverName}</b></td>
+      <td>${a.busPlate?`<span class="badge badge-amber">${a.busPlate}</span>`:'—'}</td>
+      <td><span class="badge badge-green">7:30 ص</span></td>
+      <td><b style="color:var(--gold)">${formatTime(a.endTime)}</b></td>
+      <td><span class="badge ${shiftBadge(a.shiftType)}">${a.shiftType}</span></td>
+      <td style="color:var(--muted);font-size:0.85rem">${a.note||'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderReports() {
+  const el = document.getElementById('reportContent');
+  const counts = {};
+  Object.values(attendance).forEach(a => {
+    if (!counts[a.driverName]) counts[a.driverName] = {total:0,half:0,normal:0,extra:0,custom:0};
+    counts[a.driverName].total++;
+    if (a.shiftType==='نص يوم') counts[a.driverName].half++;
+    else if (a.shiftType==='شغل عادي') counts[a.driverName].normal++;
+    else if (a.shiftType==='شغل إضافي') counts[a.driverName].extra++;
+    else counts[a.driverName].custom++;
+  });
+  const names = Object.keys(counts);
+  if (!names.length) { el.innerHTML = '<div class="empty-state">لا يوجد بيانات بعد</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>السائق</th><th>إجمالي أيام</th><th>نص يوم</th><th>شغل عادي</th><th>شغل إضافي</th><th>وقت محدد</th></tr></thead><tbody>
+    ${names.map(n => `<tr><td><b>${n}</b></td><td><span class="badge badge-blue">${counts[n].total}</span></td>
+    <td>${counts[n].half||'—'}</td><td>${counts[n].normal||'—'}</td>
+    <td>${counts[n].extra?`<b style="color:var(--red)">${counts[n].extra}</b>`:'—'}</td>
+    <td>${counts[n].custom||'—'}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`;
+}
+function formatTime(t) {
+  if (!t) return '—';
+  const [h,m] = t.split(':'); const hour = parseInt(h);
+  return `${hour>12?hour-12:hour===0?12:hour}:${m} ${hour>=12?'م':'ص'}`;
+}
+</script>
+</body>
+</html>
