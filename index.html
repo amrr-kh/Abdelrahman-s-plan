@@ -446,15 +446,24 @@ function toast(msg) {
 }
 
 // ===== DRIVERS =====
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx4Urquc-MQwVBqFPIg_TtMIa0ovbrx7cEkcUWaQ2oMrx0J3ii3T-QVXLPAjvZ3Q_LU/exec';
+
+function sendToSheets(data) {
+  fetch(SHEETS_URL, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  }).catch(err => console.log('Sheets sync error:', err));
+}
+
 window.addDriver = function() {
   const name = document.getElementById('driverName').value.trim();
   if(!name) return alert(t('اكتب اسم السائق','Enter driver name'));
-  push(ref(db,'drivers'),{
-    name,
-    phone: document.getElementById('driverPhone').value.trim(),
-    plate: document.getElementById('driverPlate').value.trim(),
-    busSign: document.getElementById('driverBusSign').value.trim(),
-  });
+  const phone = document.getElementById('driverPhone').value.trim();
+  const plate = document.getElementById('driverPlate').value.trim();
+  const busSign = document.getElementById('driverBusSign').value.trim();
+  push(ref(db,'drivers'),{ name, phone, plate, busSign });
+  sendToSheets({ type:'driver', name, phone, plate, busSign });
   ['driverName','driverPhone','driverPlate','driverBusSign'].forEach(id=>document.getElementById(id).value='');
   closeModal();
   toast(t('تم إضافة السائق ✓','Driver added ✓'));
@@ -557,11 +566,13 @@ window.saveAttendance = function() {
   if(selectedShift==='custom'){ endTime=document.getElementById('customTime').value; if(!endTime) return alert(t('اكتب الوقت','Enter time')); }
   const driver = drivers[driverId];
   const shiftLabel = {'12:30':t('نص يوم','Half Day'),'14:00':t('شغل عادي','Normal'),'21:00':t('شغل إضافي','Extra'),'custom':t('وقت محدد','Custom')}[selectedShift]||selectedShift;
-  push(ref(db,'attendance'),{
+  const attendRecord = {
     driverId, date, startTime:'07:30', endTime, shiftType:shiftLabel,
     driverName:driver?.name||'', plate:driver?.plate||'', busSign:driver?.busSign||'',
     route, note, timestamp:Date.now()
-  });
+  };
+  push(ref(db,'attendance'), attendRecord);
+  sendToSheets({ type:'attendance', date, driverName:driver?.name||'', plate:driver?.plate||'', busSign:driver?.busSign||'', endTime, shiftType:shiftLabel, route, note });
   ['attendNote','attendRoute'].forEach(id=>document.getElementById(id).value='');
   document.querySelectorAll('.shift-opt').forEach(o=>o.classList.remove('selected'));
   selectedShift='';
