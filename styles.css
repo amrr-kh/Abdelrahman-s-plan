@@ -139,7 +139,7 @@ footer .footer-logo { margin-bottom:0.5rem; }
 footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
 
 /* TOAST */
-#toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(100px); background:var(--orange); color:white; padding:12px 28px; border-radius:8px; font-weight:700; transition:transform 0.3s; z-index:9999; pointer-events:none; box-shadow:0 4px 16px rgba(232,98,10,0.4); }
+#toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(250px); background:var(--orange); color:white; padding:12px 28px; border-radius:8px; font-weight:700; transition:transform 0.3s; z-index:9999; pointer-events:none; box-shadow:0 4px 16px rgba(232,98,10,0.4); }
 #toast.show { transform:translateX(-50%) translateY(0); }
 
 .empty-state { text-align:center; color:var(--muted); padding:2.5rem; font-size:0.9rem; }

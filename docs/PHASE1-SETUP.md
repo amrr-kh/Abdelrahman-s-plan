@@ -6,21 +6,33 @@ The code now expects Firebase Authentication and role-based Security Rules.
 Firebase project: `abdelrahman-transport` (console: https://console.firebase.google.com).
 
 ## 1. Enable sign-in
-1. Build → Authentication → Get started → **Sign-in method** → enable **Email/Password**.
-2. Authentication → **Users** → *Add user* for each staff member (email + strong password).
-3. Copy each user's **User UID**.
-4. Settings → disable self-service sign-up if the option is shown (users should only be created by you).
+Build → Authentication → Get started → **Sign-in method** → enable **Email/Password** (users only ever type a PIN; the email part is internal).
 
-## 2. Give users a role
+## 2. Create the two PIN accounts
+The app logs in with a **PIN only**. A PIN is the password of one of two shared accounts, so Firebase checks it on its servers.
+
+Authentication → Users → **Add user**, twice:
+
+| Email (exactly) | Password = the PIN | Role |
+|---|---|---|
+| `admin@travelband.app` | the admin PIN | admin (can delete, settings) |
+| `staff@travelband.app` | the staff PIN | supervisor (add/edit only) |
+
+- PINs must be **at least 6 digits** (Firebase minimum). 8 digits is better. The two PINs must be different.
+- Give the admin PIN only to the owner.
+- To change a PIN later: Authentication → Users → ⋮ → Reset password (or delete and re-add the user, then redo step 3 with the new UID).
+- Copy each user's **User UID**.
+
+### Give each account its role
 Realtime Database → Data → add at the root:
 
 ```
 users
-  <ADMIN_UID>:      { role: "admin" }        // can delete + migrate data
-  <SUPERVISOR_UID>: { role: "supervisor" }   // can add/edit, cannot delete
+  <ADMIN_UID>: { role: "admin" }
+  <STAFF_UID>: { role: "supervisor" }
 ```
 
-Anyone without a role is signed out immediately and cannot read data, even if they have an account.
+Anyone else, or an account without a role, is signed out immediately and cannot read data.
 
 ## 3. Publish the rules
 Realtime Database → **Rules** → paste the contents of `database.rules.json` → Publish.

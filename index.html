@@ -28,9 +28,8 @@
     <div class="lock-logo-text" data-ar="نظام إدارة النقل السياحي" data-en="Tourism Transport Management">نظام إدارة النقل السياحي</div>
   </div>
   <div class="lock-box">
-    <h2 data-ar="🔐 تسجيل الدخول" data-en="🔐 Sign in">🔐 تسجيل الدخول</h2>
-    <input class="lock-input" style="letter-spacing:0;font-size:1rem" type="email" id="loginEmail" placeholder="email" autocomplete="username" dir="ltr"/>
-    <input class="lock-input" style="letter-spacing:2px;font-size:1rem" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" dir="ltr"/>
+    <h2 data-ar="🔐 أدخل الكود السري" data-en="🔐 Enter PIN">🔐 أدخل الكود السري</h2>
+    <input class="lock-input" type="password" id="loginPin" placeholder="••••••" maxlength="12" inputmode="numeric" autocomplete="one-time-code" dir="ltr" aria-label="PIN"/>
     <button class="lock-btn" id="loginBtn" onclick="doLogin()" data-ar="دخول" data-en="Login">دخول</button>
     <div class="lock-error" id="lockError"></div>
   </div>

@@ -156,23 +156,34 @@ function showLogin(msg) {
   if (msg) { err.textContent = msg; err.style.display='block'; } else err.style.display='none';
 }
 
+// PIN login. Behind the scenes the PIN is the password of one of two shared Firebase accounts
+// (admin / staff), so it is verified by Firebase on the server, never in this page.
+const PIN_ACCOUNTS = ['staff@travelband.app', 'admin@travelband.app'];
+
 window.doLogin = async function() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  if (!email || !password) return showLogin(t('اكتب الإيميل وكلمة السر','Enter email and password'));
+  const pin = normDigits(document.getElementById('loginPin').value).trim();
+  if (pin.length < 6) return showLogin(t('الكود السري 6 أرقام على الأقل','The PIN must be at least 6 digits'));
   const btn = document.getElementById('loginBtn');
   btn.disabled = true;
   try {
-    await signInWithEmailAndPassword(auth, email, password);
-    document.getElementById('loginPassword').value = '';
-  } catch (e) {
-    console.error(e);
-    const tooMany = e.code === 'auth/too-many-requests';
-    showLogin(tooMany ? t('محاولات كتير، حاول لاحقاً','Too many attempts, try later') : t('❌ الإيميل أو كلمة السر غلط','❌ Wrong email or password'));
+    let signedIn = false, lastErr = null;
+    for (const email of PIN_ACCOUNTS) {
+      try { await signInWithEmailAndPassword(auth, email, pin); signedIn = true; break; }
+      catch (err) { lastErr = err; if (err.code === 'auth/too-many-requests' || err.code === 'auth/network-request-failed') break; }
+    }
+    if (!signedIn) throw lastErr;
+    document.getElementById('loginPin').value = '';
+  } catch (err) {
+    console.error(err);
+    const msg = err && err.code === 'auth/too-many-requests' ? t('محاولات كتير، حاول لاحقاً','Too many attempts, try later')
+      : err && err.code === 'auth/network-request-failed' ? t('لا يوجد اتصال بالإنترنت','No internet connection')
+      : t('❌ الكود غلط','❌ Wrong PIN');
+    showLogin(msg);
+    document.getElementById('loginPin').value = '';
   } finally { btn.disabled = false; }
 }
 window.doLogout = function() { signOut(auth); }
-document.getElementById('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') window.doLogin(); });
+document.getElementById('loginPin').addEventListener('keydown', e => { if(e.key==='Enter') window.doLogin(); });
 
 onAuthStateChanged(auth, async user => {
   stopListening();
