@@ -42,7 +42,7 @@ Today it is a single `index.html` (Arabic/English, RTL/LTR) backed by Firebase R
 ## 3. Roadmap
 
 ### Phase 0 — Housekeeping (½ day)
-- [ ] Add `README.md` (purpose, setup, deploy, data model).
+- [x] Add `README.md` (purpose, setup, deploy, data model).
 - [ ] Add `.gitignore`, `LICENSE` (or mark private).
 - [ ] Enable GitHub Pages or Firebase Hosting for deployment.
 - [ ] Tag current version `v0.1`.
