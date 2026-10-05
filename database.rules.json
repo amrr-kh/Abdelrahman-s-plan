@@ -2,15 +2,10 @@
   "rules": {
     ".read": false,
     ".write": false,
-    "users": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid"
-      }
-    },
     "drivers": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      ".read": "auth != null",
       "$id": {
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".write": "auth != null",
         ".validate": "newData.hasChild('name')",
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
@@ -42,9 +37,9 @@
       }
     },
     "workOrders": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      ".read": "auth != null",
       "$id": {
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".write": "auth != null",
         ".validate": "newData.hasChildren(['driverId', 'driverName', 'date', 'workOrder', 'photoUrl', 'timestamp'])",
         "driverId": {
           ".validate": "newData.isString() && newData.val().length <= 100"
@@ -73,9 +68,9 @@
       }
     },
     "attendance": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      ".read": "auth != null",
       "$id": {
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".write": "auth != null",
         ".validate": "newData.hasChildren([\"driverId\", \"date\", \"timestamp\"])",
         "driverId": {
           ".validate": "newData.isString() && newData.val().length <= 100"
@@ -128,8 +123,8 @@
       }
     },
     "settings": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
-      ".write": "auth != null && root.child(\"users\").child(auth.uid).child(\"role\").val() === \"admin\"",
+      ".read": "auth != null",
+      ".write": "auth != null",
       "startTime": {
         ".validate": "newData.isString() && newData.val().matches(/^d{2}:d{2}$/)"
       },
@@ -147,9 +142,9 @@
       }
     },
     "vehicles": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      ".read": "auth != null",
       "$id": {
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".write": "auth != null",
         ".validate": "newData.hasChild('plate')",
         "plate": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"

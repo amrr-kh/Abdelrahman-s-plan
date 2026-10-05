@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { daysUntil, expiryStatus, collectExpiries } from "./utils.js";
 import { SHIFTS, STATUSES, statusOf, normDigits, shiftCode, esc, normName, addDays, weekStart, monthRange, fmtHours, csvCell, formatDate, isEgyptianMobile, formatTime12, hoursOfRecord, summarizeReport } from "./utils.js";
@@ -162,9 +162,9 @@ function showLogin(msg) {
   if (msg) { err.textContent = msg; err.style.display='block'; } else err.style.display='none';
 }
 
-// PIN login. Behind the scenes the PIN is the password of one of two shared Firebase accounts
-// (admin / staff), so it is verified by Firebase on the server, never in this page.
-const PIN_ACCOUNTS = ['staff@travelband.app', 'admin@travelband.app'];
+// PIN login. Behind the scenes the PIN is the password of a single Firebase account
+// (one personal account), so it is verified by Firebase on the server, never in this page.
+const OWNER_EMAIL = 'owner@travelband.app';   // the single account; its password is your PIN
 
 window.doLogin = async function() {
   const pin = normDigits(document.getElementById('loginPin').value).trim();
@@ -172,12 +172,7 @@ window.doLogin = async function() {
   const btn = document.getElementById('loginBtn');
   btn.disabled = true;
   try {
-    let signedIn = false, lastErr = null;
-    for (const email of PIN_ACCOUNTS) {
-      try { await signInWithEmailAndPassword(auth, email, pin); signedIn = true; break; }
-      catch (err) { lastErr = err; if (err.code === 'auth/too-many-requests' || err.code === 'auth/network-request-failed') break; }
-    }
-    if (!signedIn) throw lastErr;
+    await signInWithEmailAndPassword(auth, OWNER_EMAIL, pin);
     document.getElementById('loginPin').value = '';
   } catch (err) {
     console.error(err);
@@ -191,23 +186,12 @@ window.doLogin = async function() {
 window.doLogout = function() { signOut(auth); }
 document.getElementById('loginPin').addEventListener('keydown', e => { if(e.key==='Enter') window.doLogin(); });
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, user => {
   stopListening();
   if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
   if (!user) { isAdmin = false; showLogin(); return; }
-  try {
-    const role = (await get(ref(db,'users/'+user.uid+'/role'))).val();
-    if (role !== 'admin' && role !== 'supervisor') {
-      await signOut(auth);
-      return showLogin(t('حسابك غير مفعّل. تواصل مع المسؤول.','Your account is not activated. Contact the administrator.'));
-    }
-    isAdmin = role === 'admin';
-    document.getElementById('navSettings').style.display = isAdmin ? '' : 'none';
-  } catch (e) {
-    console.error(e);
-    await signOut(auth);
-    return showLogin(t('تعذر التحقق من الصلاحيات','Could not verify permissions'));
-  }
+  isAdmin = true;   // personal use: the one signed-in user can do everything
+  document.getElementById('navSettings').style.display = '';
   document.getElementById('lockScreen').style.display='none';
   document.getElementById('loadingOverlay').style.display='flex';
   setTodayDate(); startClock(); startListening();
@@ -264,7 +248,7 @@ function toast(msg) {
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx4Urquc-MQwVBqFPIg_TtMIa0ovbrx7cEkcUWaQ2oMrx0J3ii3T-QVXLPAjvZ3Q_LU/exec';
 
 // Sends the signed-in user's ID token so the Apps Script can verify the caller
-// (see docs/PHASE1-SETUP.md for the script-side check).
+// (see docs/SETUP.md for the script-side check).
 async function sendToSheets(data) {
   try {
     const idToken = await auth.currentUser?.getIdToken();

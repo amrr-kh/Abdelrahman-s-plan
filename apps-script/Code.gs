@@ -7,8 +7,7 @@
  *   FIREBASE_DB_URL    https://abdelrahman-transport-default-rtdb.europe-west1.firebasedatabase.app
  *   SHEET_ID           (optional) spreadsheet id; defaults to the spreadsheet this script is bound to
  *
- * Every request must carry a valid Firebase ID token of a user who has a role
- * (admin or supervisor) in the Realtime Database.
+ * Every request must carry a valid Firebase ID token (your signed-in session).
  */
 
 var MODEL = 'claude-sonnet-5-5';
@@ -59,13 +58,10 @@ function authorize_(idToken) {
     var payload = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(idToken.split('.')[1])).getDataAsString());
     var uid = payload.user_id || payload.sub;
     if (!uid) return null;
-    // The database rules only let a user read their own role, and the REST call
-    // validates the token — so a forged token or uid fails here.
-    var url = prop_('FIREBASE_DB_URL') + '/users/' + encodeURIComponent(uid) + '/role.json?auth=' + encodeURIComponent(idToken);
-    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-    if (res.getResponseCode() !== 200) return null;
-    var role = JSON.parse(res.getContentText());
-    return (role === 'admin' || role === 'supervisor') ? { uid: uid, role: role } : null;
+    // The database rules only allow signed-in users to read /settings, and the REST call
+    // validates the token with Firebase, so a forged or expired token fails here.
+    var res = UrlFetchApp.fetch(prop_('FIREBASE_DB_URL') + '/settings.json?auth=' + encodeURIComponent(idToken), { muteHttpExceptions: true });
+    return res.getResponseCode() === 200 ? { uid: uid } : null;
   } catch (err) { return null; }
 }
 

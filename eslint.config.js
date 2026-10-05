@@ -2,7 +2,7 @@ import js from "@eslint/js";
 import globals from "globals";
 
 export default [
-  { ignores: ["node_modules/**", "apps-script/**", "sw.js"] },
+  { ignores: ["node_modules/**", ".vercel/**", "apps-script/**", "sw.js"] },
   js.configs.recommended,
   {
     files: ["js/**/*.js"],

@@ -22,49 +22,38 @@ beforeEach(async () => {
   await env.clearDatabase();
   await env.withSecurityRulesDisabled(async ctx => {
     const db = ctx.database();
-    await set(ref(db, 'users/admin1'), { role: 'admin' });
-    await set(ref(db, 'users/sup1'), { role: 'supervisor' });
     await set(ref(db, 'drivers/d1'), { name: 'Driver One', phone: '', plate: '', busSign: '', status: 'active' });
     await set(ref(db, 'attendance/r1'), goodAttendance);
   });
 });
 
-const as = uid => env.authenticatedContext(uid).database();
+const me = () => env.authenticatedContext('owner').database();
 const anon = () => env.unauthenticatedContext().database();
 
 test('logged-out users cannot read or write anything', async () => {
-  await assertFails(get(ref(anon(), 'drivers')));
-  await assertFails(get(ref(anon(), 'attendance')));
+  for (const node of ['drivers', 'attendance', 'workOrders', 'vehicles', 'settings']) {
+    await assertFails(get(ref(anon(), node)));
+  }
   await assertFails(set(ref(anon(), 'drivers/x'), { name: 'X' }));
+  await assertFails(remove(ref(anon(), 'attendance/r1')));
 });
 
-test('authenticated users without a role are locked out', async () => {
-  await assertFails(get(ref(as('stranger'), 'drivers')));
-  await assertFails(set(ref(as('stranger'), 'drivers/x'), { name: 'X' }));
+test('unknown top-level nodes are closed to everyone', async () => {
+  await assertFails(get(ref(me(), 'buses')));
+  await assertFails(set(ref(me(), 'secrets/x'), 1));
 });
 
-test('users can read only their own role, and cannot change it', async () => {
-  await assertSucceeds(get(ref(as('sup1'), 'users/sup1/role')));
-  await assertFails(get(ref(as('sup1'), 'users/admin1/role')));
-  await assertFails(set(ref(as('sup1'), 'users/sup1/role'), 'admin'));
-});
-
-test('supervisor can read, add and edit but not delete', async () => {
-  const db = as('sup1');
+test('signed-in owner can read, add, edit and delete', async () => {
+  const db = me();
   await assertSucceeds(get(ref(db, 'drivers')));
   await assertSucceeds(set(ref(db, 'drivers/d2'), { name: 'Driver Two', status: 'active' }));
   await assertSucceeds(update(ref(db, 'attendance/r1'), { route: 'Airport', updatedAt: 2 }));
-  await assertFails(remove(ref(db, 'attendance/r1')));
-  await assertFails(remove(ref(db, 'drivers/d1')));
-});
-
-test('admin can delete', async () => {
-  await assertSucceeds(remove(ref(as('admin1'), 'attendance/r1')));
-  await assertSucceeds(remove(ref(as('admin1'), 'drivers/d1')));
+  await assertSucceeds(remove(ref(db, 'attendance/r1')));
+  await assertSucceeds(remove(ref(db, 'drivers/d1')));
 });
 
 test('attendance validation rejects bad data', async () => {
-  const db = as('sup1');
+  const db = me();
   await assertSucceeds(set(ref(db, 'attendance/ok'), goodAttendance));
   await assertFails(set(ref(db, 'attendance/bad1'), { ...goodAttendance, date: '05/10/2026' }));
   await assertFails(set(ref(db, 'attendance/bad2'), { ...goodAttendance, shiftType: 'نص يوم' }));
@@ -75,42 +64,33 @@ test('attendance validation rejects bad data', async () => {
 });
 
 test('driver validation rejects bad data', async () => {
-  const db = as('sup1');
+  const db = me();
   await assertFails(set(ref(db, 'drivers/e1'), { phone: '0101' })); // name required
   await assertFails(set(ref(db, 'drivers/e2'), { name: '' }));
   await assertFails(set(ref(db, 'drivers/e3'), { name: 'X', status: 'gone' }));
   await assertFails(set(ref(db, 'drivers/e4'), { name: 'X', admin: true }));
+  await assertSucceeds(update(ref(db, 'drivers/d1'), { licenseExpiry: '2027-03-01' }));
+  await assertSucceeds(update(ref(db, 'drivers/d1'), { licenseExpiry: '' }));
+  await assertFails(update(ref(db, 'drivers/d1'), { licenseExpiry: 'soon' }));
 });
 
-test('settings: everyone with a role reads, only admin writes', async () => {
+test('settings: times must be HH:MM', async () => {
   const s = { startTime: '07:30', halfEnd: '12:30', normalEnd: '14:00', extraEnd: '21:00' };
-  await assertSucceeds(set(ref(as('admin1'), 'settings'), s));
-  await assertFails(set(ref(as('sup1'), 'settings'), s));
-  await assertSucceeds(get(ref(as('sup1'), 'settings')));
-  await assertFails(set(ref(as('admin1'), 'settings'), { ...s, startTime: 'late' }));
+  await assertSucceeds(set(ref(me(), 'settings'), s));
+  await assertFails(set(ref(me(), 'settings'), { ...s, startTime: 'late' }));
 });
 
 test('work orders: photoUrl must be https', async () => {
   const wo = { driverId: 'd1', driverName: 'A', date: '2026-10-05', workOrder: '123', photoUrl: 'https://drive.google.com/x', timestamp: 1 };
-  await assertSucceeds(set(ref(as('sup1'), 'workOrders/w1'), wo));
-  await assertFails(set(ref(as('sup1'), 'workOrders/w2'), { ...wo, photoUrl: 'javascript:alert(1)' }));
-  await assertFails(remove(ref(as('sup1'), 'workOrders/w1')));
+  await assertSucceeds(set(ref(me(), 'workOrders/w1'), wo));
+  await assertFails(set(ref(me(), 'workOrders/w2'), { ...wo, photoUrl: 'javascript:alert(1)' }));
 });
 
-test('vehicles: supervisor adds/edits, only admin deletes, dates validated', async () => {
+test('vehicles: dates validated, plate required', async () => {
   const v = { plate: 'ABC 123', busSign: 'B1', insuranceExpiry: '2026-12-01', licenseExpiry: '', status: 'active', createdAt: 1 };
-  await assertSucceeds(set(ref(as('sup1'), 'vehicles/v1'), v));
-  await assertSucceeds(update(ref(as('sup1'), 'vehicles/v1'), { nextMaintenance: '2026-11-15' }));
-  await assertFails(set(ref(as('sup1'), 'vehicles/v2'), { ...v, insuranceExpiry: '1/12/2026' }));
-  await assertFails(set(ref(as('sup1'), 'vehicles/v3'), { busSign: 'no plate' }));
-  await assertFails(set(ref(as('sup1'), 'vehicles/v4'), { ...v, secret: 1 }));
-  await assertFails(get(ref(anon(), 'vehicles')));
-  await assertFails(remove(ref(as('sup1'), 'vehicles/v1')));
-  await assertSucceeds(remove(ref(as('admin1'), 'vehicles/v1')));
-});
-
-test('driver licenseExpiry must be a date or empty', async () => {
-  await assertSucceeds(update(ref(as('sup1'), 'drivers/d1'), { licenseExpiry: '2027-03-01' }));
-  await assertSucceeds(update(ref(as('sup1'), 'drivers/d1'), { licenseExpiry: '' }));
-  await assertFails(update(ref(as('sup1'), 'drivers/d1'), { licenseExpiry: 'soon' }));
+  await assertSucceeds(set(ref(me(), 'vehicles/v1'), v));
+  await assertSucceeds(update(ref(me(), 'vehicles/v1'), { nextMaintenance: '2026-11-15' }));
+  await assertFails(set(ref(me(), 'vehicles/v2'), { ...v, insuranceExpiry: '1/12/2026' }));
+  await assertFails(set(ref(me(), 'vehicles/v3'), { busSign: 'no plate' }));
+  await assertFails(set(ref(me(), 'vehicles/v4'), { ...v, secret: 1 }));
 });

@@ -33,7 +33,7 @@ No Firebase paid plan is needed; everything server-side runs in Apps Script.
 
 ## Notes and limits
 - The AI is told to return `null` for anything unreadable instead of guessing; empty fields mean "fill in by hand".
-- Every call is authenticated: the script verifies the caller's Firebase token and role before using the AI key.
+- Every call is authenticated: the script verifies the caller's Firebase login token before using the AI key.
 - Photos are private to the Google account that owns the script. The "Open" link works for people signed in to that account or given access to the Drive folder — share the folder if drivers' supervisors need it.
 - Deleting a record in the app (admin) does **not** remove the sheet row or the photo.
 - Each driver's Drive folder and sheet tab are matched by the driver's ID: renaming a driver renames them, and two drivers with the same name get a short ID suffix. Reports and tables always show the driver's current name; records keep the plate and bus used on that day.
