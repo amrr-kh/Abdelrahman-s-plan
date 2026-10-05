@@ -23,6 +23,22 @@
       }
     },
 
+    "workOrders": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      "$id": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".validate": "newData.hasChildren(['driverId', 'driverName', 'date', 'workOrder', 'photoUrl', 'timestamp'])",
+        "driverId":   { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "driverName": { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "sheetName":  { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "date":       { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+        "workOrder":  { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "photoUrl":   { ".validate": "newData.isString() && newData.val().matches(/^https:\\/\\/.*/) && newData.val().length <= 500" },
+        "timestamp":  { ".validate": "newData.isNumber()" },
+        "$other":     { ".validate": false }
+      }
+    },
+
     "attendance": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
       "$id": {
