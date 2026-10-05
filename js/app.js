@@ -1,6 +1,9 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+// Demo mode (?demo): sample data in memory, no Firebase, nothing saved. See js/demo-firebase.js
+const DEMO = new URLSearchParams(location.search).has('demo');
+const FB = 'https://www.gstatic.com/firebasejs/10.12.0/';
+const { initializeApp } = await import(DEMO ? './demo-firebase.js' : FB + 'firebase-app.js');
+const { getDatabase, ref, push, onValue, remove, update } = await import(DEMO ? './demo-firebase.js' : FB + 'firebase-database.js');
+const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } = await import(DEMO ? './demo-firebase.js' : FB + 'firebase-auth.js');
 import { daysUntil, expiryStatus, collectExpiries } from "./utils.js";
 import { SHIFTS, STATUSES, statusOf, normDigits, shiftCode, esc, normName, addDays, weekStart, monthRange, fmtHours, csvCell, formatDate, isEgyptianMobile, formatTime12, hoursOfRecord, summarizeReport } from "./utils.js";
 
@@ -250,6 +253,7 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx4Urquc-MQwVBqFPIg_
 // Sends the signed-in user's ID token so the Apps Script can verify the caller
 // (see docs/SETUP.md for the script-side check).
 async function sendToSheets(data) {
+  if (DEMO) return;
   try {
     const idToken = await auth.currentUser?.getIdToken();
     await fetch(SHEETS_URL, {
@@ -822,6 +826,11 @@ let woImage = null; // base64 JPEG (no prefix)
 
 // Calls the Apps Script backend and reads its JSON reply
 async function callScript(payload) {
+  if (DEMO) {
+    await new Promise(r => setTimeout(r, 900));
+    if (payload.type === 'extractSheet') return { ok: true, name: 'أحمد محمد', date: todayStr(), workOrder: '48213' };
+    return { ok: true, photoUrl: 'https://example.com/demo-photo' };
+  }
   const idToken = await auth.currentUser?.getIdToken();
   const res = await fetch(SHEETS_URL, {
     method:'POST',
@@ -1046,6 +1055,11 @@ function renderExpiring() {
         <td><b>${esc(i.label)}</b><div style="font-size:0.78rem;color:var(--muted)">${i.kind==='driver'?'👤 ':'🚌 '}${EXPIRY_LABELS[i.field][currentLang]}</div></td>
         <td style="text-align:end">${expiryBadge(i.date)}</td></tr>`).join('')}</tbody></table>`
     : `<div class="empty-state" style="padding:1rem">${t('لا توجد أوراق منتهية أو قاربت على الانتهاء ✓', 'Nothing expired or expiring in the next 30 days ✓')}</div>`;
+}
+
+if (DEMO) {
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#1D6FAA;color:#fff;text-align:center;padding:6px 12px;font-size:0.85rem;font-weight:700;position:sticky;top:0;z-index:160">🧪 وضع تجريبي — بيانات تجريبية ولا يتم حفظ أي شيء · Demo mode — sample data, nothing is saved. Enter any PIN (6+ digits).</div>');
+  document.title = 'Travel Band (Demo)';
 }
 
 function renderAll(){ renderDashboard(); renderAttendance(); renderAllDrivers(); renderWorkOrders(); renderVehicles(); renderStatusOptions(); renderBulk(); }

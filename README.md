@@ -51,6 +51,9 @@ Do these before the first deploy; otherwise nobody can log in.
 
 - **Installable (PWA)** on phones, works as a home-screen app; mobile bottom navigation; in-app dialogs; offline banner.
 
+## Try it without Firebase (demo mode)
+Open the site with `?demo` on the end (for example `https://your-site/index.html?demo`). It uses sample drivers, buses and a week of attendance, accepts any PIN of 6+ digits, and saves nothing (a refresh resets it). Normal mode is unchanged.
+
 ## Run locally
 No build step. Serve the folder over HTTP (Firebase Auth does not work from `file://`):
 
