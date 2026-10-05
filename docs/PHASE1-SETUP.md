@@ -69,3 +69,7 @@ Then redeploy the script as a new version. Optionally rotate the deployment URL 
 - Shift type stored as a code, translated only on display; old data auto-migrated.
 - One attendance record per driver per date; saving again asks to replace.
 - Save/delete failures are now reported instead of silently ignored.
+
+## Phase 2 additions
+Republish `database.rules.json` (new fields: driver `status`/`createdAt`, attendance `status`/`createdBy`/`updatedBy`/`updatedAt`, and an admin-only `settings` node).
+Defaults need no setup; the admin can change shift end times and the default start time in the new **Settings** tab.

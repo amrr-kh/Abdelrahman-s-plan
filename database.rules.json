@@ -2,60 +2,145 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid"
       }
     },
-
     "drivers": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
       "$id": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
         ".validate": "newData.hasChild('name')",
-        "name":    { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
-        "phone":   { ".validate": "newData.isString() && newData.val().length <= 20" },
-        "plate":   { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "busSign": { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "license": { ".validate": "newData.isString() && newData.val().length <= 50" },
-        "$other":  { ".validate": false }
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "phone": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "plate": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "busSign": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "license": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === \"active\" || newData.val() === \"inactive\")"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        }
       }
     },
-
     "workOrders": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
       "$id": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
         ".validate": "newData.hasChildren(['driverId', 'driverName', 'date', 'workOrder', 'photoUrl', 'timestamp'])",
-        "driverId":   { ".validate": "newData.isString() && newData.val().length <= 100" },
-        "driverName": { ".validate": "newData.isString() && newData.val().length <= 100" },
-        "sheetName":  { ".validate": "newData.isString() && newData.val().length <= 100" },
-        "date":       { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
-        "workOrder":  { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
-        "photoUrl":   { ".validate": "newData.isString() && newData.val().matches(/^https:\\/\\/.*/) && newData.val().length <= 500" },
-        "timestamp":  { ".validate": "newData.isNumber()" },
-        "$other":     { ".validate": false }
+        "driverId": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "driverName": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "sheetName": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "date": {
+          ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+        },
+        "workOrder": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "photoUrl": {
+          ".validate": "newData.isString() && newData.val().matches(/^https:\\/\\/.*/) && newData.val().length <= 500"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
-
     "attendance": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
       "$id": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
-        ".validate": "newData.hasChildren(['driverId', 'date', 'startTime', 'endTime', 'shiftType', 'timestamp'])",
-        "driverId":   { ".validate": "newData.isString() && newData.val().length <= 100" },
-        "date":       { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
-        "startTime":  { ".validate": "newData.isString() && newData.val().matches(/^\\d{2}:\\d{2}$/)" },
-        "endTime":    { ".validate": "newData.isString() && newData.val().matches(/^\\d{2}:\\d{2}$/)" },
-        "shiftType":  { ".validate": "newData.isString() && (newData.val() === 'half' || newData.val() === 'normal' || newData.val() === 'extra' || newData.val() === 'custom')" },
-        "driverName": { ".validate": "newData.isString() && newData.val().length <= 100" },
-        "plate":      { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "busSign":    { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "route":      { ".validate": "newData.isString() && newData.val().length <= 200" },
-        "note":       { ".validate": "newData.isString() && newData.val().length <= 200" },
-        "timestamp":  { ".validate": "newData.isNumber()" },
-        "$other":     { ".validate": false }
+        ".validate": "newData.hasChildren([\"driverId\", \"date\", \"timestamp\"])",
+        "driverId": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "date": {
+          ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+        },
+        "startTime": {
+          ".validate": "newData.isString() && (newData.val() === \"\" || newData.val().matches(/^d{2}:d{2}$/))"
+        },
+        "endTime": {
+          ".validate": "newData.isString() && (newData.val() === \"\" || newData.val().matches(/^d{2}:d{2}$/))"
+        },
+        "shiftType": {
+          ".validate": "newData.isString() && (newData.val() === \"half\" || newData.val() === \"normal\" || newData.val() === \"extra\" || newData.val() === \"custom\" || newData.val() === \"none\")"
+        },
+        "driverName": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "plate": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "busSign": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "route": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "note": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === \"present\" || newData.val() === \"off\" || newData.val() === \"sick\")"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() && newData.val().length <= 128"
+        },
+        "updatedBy": {
+          ".validate": "newData.isString() && newData.val().length <= 128"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "settings": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      ".write": "auth != null && root.child(\"users\").child(auth.uid).child(\"role\").val() === \"admin\"",
+      "startTime": {
+        ".validate": "newData.isString() && newData.val().matches(/^d{2}:d{2}$/)"
+      },
+      "halfEnd": {
+        ".validate": "newData.isString() && newData.val().matches(/^d{2}:d{2}$/)"
+      },
+      "normalEnd": {
+        ".validate": "newData.isString() && newData.val().matches(/^d{2}:d{2}$/)"
+      },
+      "extraEnd": {
+        ".validate": "newData.isString() && newData.val().matches(/^d{2}:d{2}$/)"
+      },
+      "$other": {
+        ".validate": false
       }
     }
   }

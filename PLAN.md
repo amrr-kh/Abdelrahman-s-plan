@@ -58,13 +58,13 @@ Today it is a single `index.html` (Arabic/English, RTL/LTR) backed by Firebase R
 - [x] Block duplicate attendance (same `driverId` + `date`) with a confirm-to-overwrite.
 
 ### Phase 2 — Core features (1 week)
-- [ ] Edit driver (including license, status active/inactive instead of hard delete).
-- [ ] Edit attendance record (with edited-by and edited-at audit fields).
-- [ ] Configurable shift presets and default start time (settings page or Firebase node).
-- [ ] Attendance form: remember last route per driver; "same as yesterday" quick-fill.
-- [ ] Bulk entry: one screen listing all active drivers with tap-to-mark shifts for a date.
-- [ ] Absence / day-off / sick statuses (currently only presence is recorded).
-- [ ] Proper input validation: Egyptian mobile (`01[0125]xxxxxxxx`), plate format, required fields.
+- [x] Edit driver (including license, status active/inactive instead of hard delete).
+- [x] Edit attendance record (with edited-by and edited-at audit fields).
+- [x] Configurable shift presets and default start time (settings page or Firebase node).
+- [x] Attendance form: remember last route per driver; "same as yesterday" quick-fill.
+- [x] Bulk entry: one screen listing all active drivers with tap-to-mark shifts for a date.
+- [x] Absence / day-off / sick statuses (currently only presence is recorded).
+- [ ] Input validation: Egyptian mobile done; plate format still free text (no agreed format yet).
 
 ### Phase 3 — Reports and export (1 week)
 - [ ] Date-range filter (week / month / custom) on reports.

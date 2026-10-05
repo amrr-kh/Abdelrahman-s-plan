@@ -182,18 +182,19 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
 <div class="modal-overlay" id="addDriverModal">
   <div class="modal">
     <div class="modal-title">
-      <span data-ar="➕ إضافة سائق جديد" data-en="➕ Add New Driver">➕ إضافة سائق جديد</span>
+      <span id="driverModalTitle">➕ إضافة سائق جديد</span>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="form-grid" style="grid-template-columns:1fr">
-      <div class="form-group"><label data-ar="اسم السائق" data-en="Driver Name">اسم السائق</label><input type="text" id="driverName" /></div>
-      <div class="form-group"><label data-ar="رقم التليفون المصري" data-en="Egyptian Phone Number">رقم التليفون المصري</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx"/></div>
+      <div class="form-group"><label data-ar="اسم السائق" data-en="Driver Name">اسم السائق</label><input type="text" id="driverName" maxlength="100"/></div>
+      <div class="form-group"><label data-ar="رقم التليفون المصري" data-en="Egyptian Phone Number">رقم التليفون المصري</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx" maxlength="11" inputmode="numeric" dir="ltr"/></div>
+      <div class="form-group"><label data-ar="رقم الرخصة" data-en="License Number">رقم الرخصة</label><input type="text" id="driverLicense" maxlength="50"/></div>
       <div class="form-group"><label data-ar="رقم لوحة العربية (مصري)" data-en="Egyptian Plate Number">رقم لوحة العربية (مصري)</label><input type="text" id="driverPlate" placeholder="أ ب ج ١٢٣٤"/></div>
       <div class="form-group"><label data-ar="رقم / علامة الباص" data-en="Bus Number / Sign">رقم / علامة الباص</label><input type="text" id="driverBusSign" placeholder="مثال: B12"/></div>
 
     </div>
     <br/>
-    <button class="btn btn-primary" onclick="addDriver()" style="width:100%" data-ar="إضافة السائق" data-en="Add Driver">إضافة السائق</button>
+    <button class="btn btn-primary" id="driverSaveBtn" onclick="saveDriver()" style="width:100%">إضافة السائق</button>
   </div>
 </div>
 
@@ -225,6 +226,7 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
     <button class="nav-btn" onclick="showPage('drivers',this)" data-ar="👤 السائقين" data-en="👤 Drivers">👤 السائقين</button>
     <button class="nav-btn" onclick="showPage('attendance',this)" data-ar="📋 الحضور" data-en="📋 Attendance">📋 الحضور</button>
     <button class="nav-btn" onclick="showPage('workorders',this)" data-ar="📷 أوامر الشغل" data-en="📷 Work Orders">📷 أوامر الشغل</button>
+    <button class="nav-btn" id="navSettings" style="display:none" onclick="showPage('settings',this)" data-ar="⚙️ الإعدادات" data-en="⚙️ Settings">⚙️ الإعدادات</button>
     <button class="nav-btn" onclick="showPage('reports',this)" data-ar="📈 التقارير" data-en="📈 Reports">📈 التقارير</button>
   </nav>
 </header>
@@ -288,19 +290,22 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
         </div>
       </div>
 
+      <div id="attendEditBanner" style="display:none;background:var(--orange-pale);border:1px solid var(--orange);border-radius:8px;padding:8px 12px;margin-bottom:1rem;color:var(--brown);font-size:0.88rem;"></div>
+
       <div class="form-group" style="margin-bottom:1rem;">
-        <label data-ar="برنامج الباص / المسار" data-en="Bus Program / Route">برنامج الباص / المسار</label>
-        <input type="text" id="attendRoute" placeholder="مثال: مطار — فندق نيل هيلتون"/>
+        <label data-ar="الحالة" data-en="Status">الحالة</label>
+        <div class="shift-options" id="statusOptions"></div>
       </div>
 
       <div class="form-group" style="margin-bottom:1rem;">
+        <label data-ar="برنامج الباص / المسار" data-en="Bus Program / Route">برنامج الباص / المسار</label>
+        <input type="text" id="attendRoute" maxlength="200" placeholder="مثال: مطار — فندق نيل هيلتون"/>
+      </div>
+      <div style="margin-bottom:1rem;"><button class="btn btn-secondary" id="repeatLastBtn" onclick="repeatLast()" style="display:none"></button></div>
+
+      <div class="form-group" id="shiftGroup" style="margin-bottom:1rem;">
         <label data-ar="وقت الانصراف" data-en="End Time">وقت الانصراف</label>
-        <div class="shift-options">
-          <div class="shift-opt" onclick="selectShift(this,'12:30')" data-ar="🌤 نص يوم 12:30" data-en="🌤 Half Day 12:30">🌤 نص يوم 12:30</div>
-          <div class="shift-opt" onclick="selectShift(this,'14:00')" data-ar="☀️ عادي 2:00م" data-en="☀️ Normal 2:00pm">☀️ عادي 2:00م</div>
-          <div class="shift-opt" onclick="selectShift(this,'21:00')" data-ar="🌙 إضافي 9:00م" data-en="🌙 Extra 9:00pm">🌙 إضافي 9:00م</div>
-          <div class="shift-opt" onclick="selectShift(this,'custom')" data-ar="⏰ وقت تاني" data-en="⏰ Custom Time">⏰ وقت تاني</div>
-        </div>
+        <div class="shift-options" id="shiftOptions"></div>
       </div>
       <div id="customTimeRow" style="display:none;margin-bottom:1rem;">
         <div class="form-group" style="max-width:200px">
@@ -310,9 +315,21 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
       </div>
       <div class="form-group" style="margin-bottom:1.5rem;max-width:400px">
         <label data-ar="ملاحظات" data-en="Notes">ملاحظات</label>
-        <input type="text" id="attendNote"/>
+        <input type="text" id="attendNote" maxlength="200"/>
       </div>
-      <button class="btn btn-primary" onclick="saveAttendance()" data-ar="حفظ الحضور" data-en="Save Attendance">حفظ الحضور</button>
+      <button class="btn btn-primary" id="attendSaveBtn" onclick="saveAttendance()" data-ar="حفظ الحضور" data-en="Save Attendance">حفظ الحضور</button>
+      <button class="btn btn-secondary" id="attendCancelBtn" onclick="cancelEditAttendance()" style="display:none;margin-inline-start:8px"></button>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-ar="⚡ تسجيل جماعي" data-en="⚡ Bulk Entry">⚡ تسجيل جماعي</div>
+      <div class="form-group" style="max-width:220px;margin-bottom:1rem;">
+        <label data-ar="التاريخ" data-en="Date">التاريخ</label>
+        <input type="date" id="bulkDate" onchange="renderBulk()"/>
+      </div>
+      <div class="table-wrap" id="bulkTable"></div>
+      <br/>
+      <button class="btn btn-primary" id="bulkSaveBtn" onclick="saveBulk()"></button>
     </div>
 
     <div class="card">
@@ -325,6 +342,21 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
         <button class="btn btn-secondary" onclick="clearFilter()" data-ar="كل السجلات" data-en="All Records">كل السجلات</button>
       </div>
       <div class="table-wrap" id="attendanceTable"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS (admin) -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <div class="card-title" data-ar="⚙️ إعدادات الورديات" data-en="⚙️ Shift Settings">⚙️ إعدادات الورديات</div>
+      <div class="form-grid">
+        <div class="form-group"><label data-ar="وقت البداية الافتراضي" data-en="Default start time">وقت البداية الافتراضي</label><input type="time" id="setStart"/></div>
+        <div class="form-group"><label data-ar="نهاية نص يوم" data-en="Half day ends">نهاية نص يوم</label><input type="time" id="setHalf"/></div>
+        <div class="form-group"><label data-ar="نهاية الشغل العادي" data-en="Normal ends">نهاية الشغل العادي</label><input type="time" id="setNormal"/></div>
+        <div class="form-group"><label data-ar="نهاية الشغل الإضافي" data-en="Extra ends">نهاية الشغل الإضافي</label><input type="time" id="setExtra"/></div>
+      </div>
+      <br/>
+      <button class="btn btn-primary" onclick="saveSettings()" data-ar="حفظ الإعدادات" data-en="Save Settings">حفظ الإعدادات</button>
     </div>
   </div>
 
@@ -412,6 +444,8 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 let drivers = {}, attendance = {}, workOrders = {};
+const DEFAULT_SETTINGS = { startTime:'07:30', halfEnd:'12:30', normalEnd:'14:00', extraEnd:'21:00' };
+let settings = { ...DEFAULT_SETTINGS };
 let loaded = 0;
 let currentLang = 'ar';
 let isAdmin = false;
@@ -422,8 +456,27 @@ const SHIFTS = {
   half:   { ar:'نص يوم',    en:'Half Day', end:'12:30' },
   normal: { ar:'شغل عادي',  en:'Normal',   end:'14:00' },
   extra:  { ar:'شغل إضافي', en:'Extra',    end:'21:00' },
-  custom: { ar:'وقت محدد',  en:'Custom',   end:'' }
+  custom: { ar:'وقت محدد',  en:'Custom',   end:'' },
+  none:   { ar:'—',         en:'—',        end:'' }
 };
+const STATUSES = {
+  present: { ar:'حاضر', en:'Present', badge:'badge-green' },
+  off:     { ar:'إجازة', en:'Day off', badge:'badge-blue' },
+  sick:    { ar:'مرضي', en:'Sick',    badge:'badge-red' }
+};
+const shiftEndKey = { half:'halfEnd', normal:'normalEnd', extra:'extraEnd' };
+function shiftEnd(code) { return shiftEndKey[code] ? settings[shiftEndKey[code]] : ''; }
+function statusOf(a) { return STATUSES[a.status] ? a.status : 'present'; }
+function statusLabel(s) { return currentLang === 'ar' ? STATUSES[s].ar : STATUSES[s].en; }
+function normDigits(s) { return String(s||'').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); }
+function isActive(d) { return d && d.status !== 'inactive'; }
+// Table cells that depend on the attendance status
+function startCell(a) { return statusOf(a)==='present' ? `<span class="badge badge-green">${formatTime(a.startTime||settings.startTime)}</span>` : '—'; }
+function endCell(a) { return statusOf(a)==='present' ? `<b style="color:var(--orange)">${formatTime(a.endTime)}</b>` : '—'; }
+function typeCell(a) {
+  const s = statusOf(a);
+  return s==='present' ? `<span class="badge ${shiftBadge(a.shiftType)}">${shiftLabel(a.shiftType)}</span>` : `<span class="badge ${STATUSES[s].badge}">${statusLabel(s)}</span>`;
+}
 const LEGACY_SHIFT = { 'نص يوم':'half','Half Day':'half','شغل عادي':'normal','Normal':'normal','شغل إضافي':'extra','Extra':'extra','وقت محدد':'custom','Custom':'custom' };
 function shiftCode(s) { return SHIFTS[s] ? s : (LEGACY_SHIFT[s] || 'custom'); }
 function shiftLabel(s) { const c = shiftCode(s); return currentLang === 'ar' ? SHIFTS[c].ar : SHIFTS[c].en; }
@@ -433,15 +486,16 @@ function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
-function checkLoaded() { loaded++; if (loaded >= 3) { document.getElementById('loadingOverlay').style.display='none'; migrateShiftCodes(); } }
+function checkLoaded() { loaded++; if (loaded >= 4) { document.getElementById('loadingOverlay').style.display='none'; migrateShiftCodes(); } }
 
 function startListening() {
   loaded = 0;
-  unsubscribers.push(onValue(ref(db,'drivers'), snap => { drivers = snap.val()||{}; renderAllDrivers(); refreshSelects(); renderDashboard(); checkLoaded(); }, onDbError));
-  unsubscribers.push(onValue(ref(db,'attendance'), snap => { attendance = snap.val()||{}; renderAttendance(); renderDashboard(); checkLoaded(); }, onDbError));
+  unsubscribers.push(onValue(ref(db,'settings'), snap => { settings = { ...DEFAULT_SETTINGS, ...(snap.val()||{}) }; renderShiftOptions(); fillSettingsForm(); renderAll(); checkLoaded(); }, onDbError));
+  unsubscribers.push(onValue(ref(db,'drivers'), snap => { drivers = snap.val()||{}; renderAllDrivers(); refreshSelects(); renderDashboard(); renderBulk(); checkLoaded(); }, onDbError));
+  unsubscribers.push(onValue(ref(db,'attendance'), snap => { attendance = snap.val()||{}; renderAttendance(); renderDashboard(); renderBulk(); checkLoaded(); }, onDbError));
   unsubscribers.push(onValue(ref(db,'workOrders'), snap => { workOrders = snap.val()||{}; renderWorkOrders(); checkLoaded(); }, onDbError));
 }
-function stopListening() { unsubscribers.forEach(u => u()); unsubscribers = []; drivers = {}; attendance = {}; workOrders = {}; }
+function stopListening() { unsubscribers.forEach(u => u()); unsubscribers = []; drivers = {}; attendance = {}; workOrders = {}; settings = { ...DEFAULT_SETTINGS }; }
 function onDbError(err) {
   console.error(err);
   document.getElementById('loadingOverlay').style.display='none';
@@ -512,6 +566,7 @@ onAuthStateChanged(auth, async user => {
       return showLogin(t('حسابك غير مفعّل. تواصل مع المسؤول.','Your account is not activated. Contact the administrator.'));
     }
     isAdmin = role === 'admin';
+    document.getElementById('navSettings').style.display = isAdmin ? '' : 'none';
   } catch (e) {
     console.error(e);
     await signOut(auth);
@@ -530,6 +585,8 @@ function setTodayDate() {
   const today = new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Cairo'});
   document.getElementById('attendDate').value = today;
   document.getElementById('filterDate').value = today;
+  document.getElementById('bulkDate').value = today;
+  renderStatusOptions(); renderBulk();
 }
 
 // ===== NAV =====
@@ -543,8 +600,20 @@ window.showPage = function(id, btn) {
 }
 
 // ===== MODAL =====
-window.openModal = function() { document.getElementById('addDriverModal').classList.add('open'); }
-window.closeModal = function() { document.getElementById('addDriverModal').classList.remove('open'); }
+let editingDriverId = null;
+window.openModal = function(id) {
+  editingDriverId = (typeof id === 'string' && drivers[id]) ? id : null;
+  const d = editingDriverId ? drivers[editingDriverId] : {};
+  document.getElementById('driverName').value = d.name || '';
+  document.getElementById('driverPhone').value = d.phone || '';
+  document.getElementById('driverLicense').value = d.license || '';
+  document.getElementById('driverPlate').value = d.plate || '';
+  document.getElementById('driverBusSign').value = d.busSign || '';
+  document.getElementById('driverModalTitle').textContent = editingDriverId ? t('✏️ تعديل بيانات السائق','✏️ Edit Driver') : t('➕ إضافة سائق جديد','➕ Add New Driver');
+  document.getElementById('driverSaveBtn').textContent = editingDriverId ? t('حفظ التعديلات','Save Changes') : t('إضافة السائق','Add Driver');
+  document.getElementById('addDriverModal').classList.add('open');
+}
+window.closeModal = function() { document.getElementById('addDriverModal').classList.remove('open'); editingDriverId = null; }
 
 // ===== TOAST =====
 function toast(msg) {
@@ -569,24 +638,41 @@ async function sendToSheets(data) {
   } catch (err) { console.log('Sheets sync error:', err); }
 }
 
-window.addDriver = function() {
+window.saveDriver = function() {
   const name = document.getElementById('driverName').value.trim();
-  if(!name) return alert(t('اكتب اسم السائق','Enter driver name'));
-  const phone = document.getElementById('driverPhone').value.trim();
+  const phone = normDigits(document.getElementById('driverPhone').value).replace(/[\s-]/g,'');
+  const license = document.getElementById('driverLicense').value.trim();
   const plate = document.getElementById('driverPlate').value.trim();
   const busSign = document.getElementById('driverBusSign').value.trim();
-  if(name.length > 100 || phone.length > 20 || plate.length > 30 || busSign.length > 30) return alert(t('البيانات طويلة جداً','Input too long'));
-  push(ref(db,'drivers'),{ name, phone, plate, busSign })
-    .then(() => toast(t('تم إضافة السائق ✓','Driver added ✓')))
-    .catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); });
-  sendToSheets({ type:'driver', name, phone, plate, busSign });
-  ['driverName','driverPhone','driverPlate','driverBusSign'].forEach(id=>document.getElementById(id).value='');
+  if(!name) return alert(t('اكتب اسم السائق','Enter driver name'));
+  if(phone && !/^01[0125]\d{8}$/.test(phone)) return alert(t('رقم التليفون لازم يكون موبايل مصري (01xxxxxxxxx)','Phone must be an Egyptian mobile number (01xxxxxxxxx)'));
+  if(name.length > 100 || license.length > 50 || plate.length > 30 || busSign.length > 30) return alert(t('البيانات طويلة جداً','Input too long'));
+  const fields = { name, phone, plate, busSign, license };
+  if(editingDriverId) {
+    update(ref(db,'drivers/'+editingDriverId), fields)
+      .then(() => toast(t('تم حفظ التعديلات ✓','Changes saved ✓')))
+      .catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); });
+  } else {
+    push(ref(db,'drivers'), { ...fields, status:'active', createdAt:Date.now() })
+      .then(() => toast(t('تم إضافة السائق ✓','Driver added ✓')))
+      .catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); });
+    sendToSheets({ type:'driver', name, phone, plate, busSign });
+  }
   closeModal();
+}
+
+window.editDriver = function(id) { openModal(id); }
+
+window.toggleDriverActive = function(id) {
+  const d = drivers[id]; if(!d) return;
+  const next = isActive(d) ? 'inactive' : 'active';
+  if(next==='inactive' && !confirm(t('إيقاف السائق؟ سيختفي من قوائم التسجيل وتبقى سجلاته.','Deactivate this driver? They disappear from entry lists; records are kept.'))) return;
+  update(ref(db,'drivers/'+id), { status: next }).catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); });
 }
 
 window.deleteDriver = function(id) {
   if(!isAdmin) return alert(t('المسح للمسؤول فقط','Only admins can delete'));
-  if(!confirm(t('تأكيد مسح السائق؟','Delete this driver?'))) return;
+  if(!confirm(t('تأكيد مسح السائق؟ (الأفضل إيقافه بدل المسح)','Delete this driver? (deactivating is usually better)'))) return;
   remove(ref(db,'drivers/'+id)).catch(e => { console.error(e); alert(t('تعذر المسح','Could not delete')); });
 }
 
@@ -596,27 +682,39 @@ function renderAllDrivers() {
   if(!list.length){ el.innerHTML=`<div class="empty-state">${t('لا يوجد سائقين','No drivers yet')}</div>`; return; }
   el.innerHTML=`<table><thead><tr>
     <th>${t('الاسم','Name')}</th><th>${t('التليفون','Phone')}</th>
-    <th>${t('اللوحة','Plate')}</th><th>${t('الباص','Bus')}</th>
+    <th>${t('اللوحة','Plate')}</th><th>${t('الباص','Bus')}</th><th>${t('الحالة','Status')}</th>
     <th></th>
   </tr></thead><tbody>
-  ${list.map(([id,d])=>`<tr>
+  ${list.map(([id,d])=>`<tr${isActive(d)?'':' style="opacity:0.55"'}>
     <td><b>${esc(d.name)}</b></td><td>${esc(d.phone)||'—'}</td>
     <td><span class="badge badge-orange">${esc(d.plate)||'—'}</span></td>
     <td><span class="badge badge-blue">${esc(d.busSign)||'—'}</span></td>
-    <td>${isAdmin?`<button class="btn btn-danger" onclick="deleteDriver('${esc(id)}')">${t('مسح','Delete')}</button>`:''}</td>
+    <td><span class="badge ${isActive(d)?'badge-green':'badge-amber'}">${isActive(d)?t('نشط','Active'):t('موقوف','Inactive')}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem" onclick="editDriver('${esc(id)}')">${t('تعديل','Edit')}</button>
+      <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem" onclick="toggleDriverActive('${esc(id)}')">${isActive(d)?t('إيقاف','Deactivate'):t('تفعيل','Activate')}</button>
+      ${isAdmin?`<button class="btn btn-danger" onclick="deleteDriver('${esc(id)}')">${t('مسح','Delete')}</button>`:''}
+    </td>
   </tr>`).join('')}</tbody></table>`;
   refreshSelects();
 }
 
 function refreshSelects() {
-  const dList = Object.entries(drivers);
-  const opts = `<option value="">${t('— اختر سائق —','— Select Driver —')}</option>` + dList.map(([id,d])=>`<option value="${esc(id)}">${esc(d.name)}</option>`).join('');
-  ['attendDriver','driverViewSelect','reportDriverSelect','woDriver'].forEach(sid=>{
-    const el = document.getElementById(sid);
-    if(el) { const keep = el.value; el.innerHTML = opts; if(keep && drivers[keep]) el.value = keep; }
+  const all = Object.entries(drivers);
+  const optHtml = list => `<option value="">${t('— اختر سائق —','— Select Driver —')}</option>` + list.map(([id,d])=>`<option value="${esc(id)}">${esc(d.name)}</option>`).join('');
+  // Entry forms list active drivers only (plus the one currently selected, e.g. when editing an old record)
+  ['attendDriver','woDriver'].forEach(sid=>{
+    const el = document.getElementById(sid); if(!el) return;
+    const keep = el.value;
+    el.innerHTML = optHtml(all.filter(([id,d])=>isActive(d)||id===keep));
+    if(keep && drivers[keep]) el.value = keep;
+  });
+  ['driverViewSelect','reportDriverSelect'].forEach(sid=>{
+    const el = document.getElementById(sid); if(!el) return;
+    const keep = el.value; el.innerHTML = optHtml(all); if(keep && drivers[keep]) el.value = keep;
   });
   const f = document.getElementById('woFilterDriver');
-  if(f) { const keep = f.value; f.innerHTML = `<option value="">${t('كل السائقين','All drivers')}</option>` + dList.map(([id,d])=>`<option value="${esc(id)}">${esc(d.name)}</option>`).join(''); if(keep && drivers[keep]) f.value = keep; }
+  if(f) { const keep = f.value; f.innerHTML = `<option value="">${t('كل السائقين','All drivers')}</option>` + all.map(([id,d])=>`<option value="${esc(id)}">${esc(d.name)}</option>`).join(''); if(keep && drivers[keep]) f.value = keep; }
 }
 
 // ===== DRIVER PROFILE VIEW =====
@@ -646,69 +744,143 @@ window.loadDriverProfile = function() {
   </tr></thead><tbody>
   ${rows.map(([,a])=>`<tr>
     <td>${formatDate(a.date)}</td>
-    <td><span class="badge badge-green">7:30 ص</span></td>
-    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
-    <td><span class="badge ${shiftBadge(a.shiftType)}">${shiftLabel(a.shiftType)}</span></td>
+    <td>${startCell(a)}</td>
+    <td>${endCell(a)}</td>
+    <td>${typeCell(a)}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.route)||'—'}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.note)||'—'}</td>
   </tr>`).join('')}</tbody></table></div>`;
 }
 
 // ===== ATTENDANCE =====
+let selectedShift = '', selectedStatus = 'present', editingAttendId = null;
+
+function renderStatusOptions() {
+  const icon = { present:'✅', off:'🏖', sick:'🤒' };
+  document.getElementById('statusOptions').innerHTML = Object.keys(STATUSES).map(k =>
+    `<div class="shift-opt${selectedStatus===k?' selected':''}" onclick="selectStatus('${k}')">${icon[k]} ${statusLabel(k)}</div>`).join('');
+  document.getElementById('shiftGroup').style.display = selectedStatus==='present' ? '' : 'none';
+  renderShiftOptions();
+}
+
+function renderShiftOptions() {
+  const icon = { half:'🌤', normal:'☀️', extra:'🌙' };
+  document.getElementById('shiftOptions').innerHTML =
+    ['half','normal','extra'].map(c => `<div class="shift-opt${selectedShift===c?' selected':''}" onclick="selectShift('${c}')">${icon[c]} ${shiftLabel(c)} ${formatTime(shiftEnd(c))}</div>`).join('') +
+    `<div class="shift-opt${selectedShift==='custom'?' selected':''}" onclick="selectShift('custom')">⏰ ${t('وقت تاني','Custom Time')}</div>`;
+  document.getElementById('customTimeRow').style.display = (selectedShift==='custom' && selectedStatus==='present') ? 'block' : 'none';
+}
+
+window.selectStatus = function(k) { selectedStatus = k; renderStatusOptions(); }
+window.selectShift = function(c) { selectedShift = c; renderShiftOptions(); }
+
+function lastRecord(driverId) {
+  let best = null;
+  Object.values(attendance).forEach(a => { if (a.driverId===driverId && (!best || a.timestamp > best.timestamp)) best = a; });
+  return best;
+}
+
 window.fillAttendDriverInfo = function() {
   const id = document.getElementById('attendDriver').value;
   const wrap = document.getElementById('attendDriverInfo');
-  if(!id){ wrap.style.display='none'; return; }
+  const btn = document.getElementById('repeatLastBtn');
   const d = drivers[id];
+  if(!id || !d){ wrap.style.display='none'; btn.style.display='none'; return; }
   document.getElementById('adPhone').textContent = d.phone||'—';
   document.getElementById('adPlate').textContent = d.plate||'—';
   document.getElementById('adBus').textContent = d.busSign||'—';
   wrap.style.display='block';
+  const last = editingAttendId ? null : lastRecord(id);
+  if(last) {
+    btn.style.display = '';
+    btn.textContent = t('↺ كرر آخر تسجيل','↺ Repeat last entry') + ' (' + formatDate(last.date) + ')';
+    const r = document.getElementById('attendRoute');
+    if(!r.value.trim()) r.value = last.route || '';   // remember the last route per driver
+  } else btn.style.display = 'none';
 }
 
-let selectedShift='';
-window.selectShift = function(el,val) {
-  document.querySelectorAll('.shift-opt').forEach(o=>o.classList.remove('selected'));
-  el.classList.add('selected'); selectedShift=val;
-  document.getElementById('customTimeRow').style.display = val==='custom'?'block':'none';
+window.repeatLast = function() {
+  const last = lastRecord(document.getElementById('attendDriver').value);
+  if(!last) return;
+  selectedStatus = statusOf(last);
+  selectedShift = selectedStatus==='present' ? shiftCode(last.shiftType) : '';
+  if(selectedShift==='none') selectedShift = '';
+  document.getElementById('attendRoute').value = last.route || '';
+  if(selectedShift==='custom') document.getElementById('customTime').value = last.endTime || '';
+  renderStatusOptions();
 }
+
+function resetAttendForm() {
+  editingAttendId = null; selectedShift = ''; selectedStatus = 'present';
+  ['attendNote','attendRoute','customTime'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('attendEditBanner').style.display = 'none';
+  document.getElementById('attendCancelBtn').style.display = 'none';
+  document.getElementById('attendSaveBtn').textContent = t('حفظ الحضور','Save Attendance');
+  document.getElementById('attendDriverInfo').style.display = 'none';
+  document.getElementById('repeatLastBtn').style.display = 'none';
+  renderStatusOptions();
+}
+
+window.editAttendance = function(id) {
+  const a = attendance[id]; if(!a) return;
+  editingAttendId = id;
+  const sel = document.getElementById('attendDriver');
+  if(![...sel.options].some(o => o.value === a.driverId)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(a.driverId)}">${esc(a.driverName)}</option>`);
+  sel.value = a.driverId;
+  document.getElementById('attendDate').value = a.date || '';
+  document.getElementById('attendRoute').value = a.route || '';
+  document.getElementById('attendNote').value = a.note || '';
+  selectedStatus = statusOf(a);
+  selectedShift = selectedStatus==='present' ? shiftCode(a.shiftType) : '';
+  document.getElementById('customTime').value = selectedShift==='custom' ? (a.endTime || '') : '';
+  const banner = document.getElementById('attendEditBanner');
+  banner.textContent = t('✏️ تعديل تسجيل: ','✏️ Editing record: ') + (a.driverName||'') + ' — ' + formatDate(a.date);
+  banner.style.display = 'block';
+  const cancel = document.getElementById('attendCancelBtn');
+  cancel.textContent = t('إلغاء التعديل','Cancel edit'); cancel.style.display = '';
+  document.getElementById('attendSaveBtn').textContent = t('حفظ التعديل','Save changes');
+  fillAttendDriverInfo();
+  renderStatusOptions();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.cancelEditAttendance = function() { resetAttendForm(); }
 
 window.saveAttendance = function() {
   const driverId = document.getElementById('attendDriver').value;
   const date = document.getElementById('attendDate').value;
   const route = document.getElementById('attendRoute').value.trim();
   const note = document.getElementById('attendNote').value.trim();
-  if(!driverId) return alert(t('اختر سائق','Select a driver'));
-  if(!selectedShift) return alert(t('اختر وقت الانصراف','Select end time'));
-  let endTime = selectedShift;
-  if(selectedShift==='custom'){ endTime=document.getElementById('customTime').value; if(!endTime) return alert(t('اكتب الوقت','Enter time')); }
-  if(!date) return alert(t('اختر التاريخ','Select a date'));
-  if(route.length > 200 || note.length > 200) return alert(t('البيانات طويلة جداً','Input too long'));
   const driver = drivers[driverId];
-  if(!driver) return alert(t('اختر سائق','Select a driver'));
-  const shiftType = {'12:30':'half','14:00':'normal','21:00':'extra','custom':'custom'}[selectedShift] || 'custom';
-  const attendRecord = {
-    driverId, date, startTime:'07:30', endTime, shiftType,
-    driverName:driver.name||'', plate:driver.plate||'', busSign:driver.busSign||'',
-    route, note, timestamp:Date.now()
-  };
-  // Block duplicates: one record per driver per date (overwrite only after confirmation)
-  const existing = Object.entries(attendance).find(([,a]) => a.driverId===driverId && a.date===date);
-  let op;
-  if(existing) {
-    if(!confirm(t('السائق مسجل بالفعل في هذا اليوم. تستبدل السجل؟','This driver already has a record for this date. Replace it?'))) return;
-    op = update(ref(db,'attendance/'+existing[0]), attendRecord);
-  } else {
-    op = push(ref(db,'attendance'), attendRecord);
+  if(!driverId || !driver) return alert(t('اختر سائق','Select a driver'));
+  if(!date) return alert(t('اختر التاريخ','Select a date'));
+  let startTime = '', endTime = '', shiftType = 'none';
+  if(selectedStatus === 'present') {
+    if(!selectedShift) return alert(t('اختر وقت الانصراف','Select end time'));
+    endTime = selectedShift==='custom' ? document.getElementById('customTime').value : shiftEnd(selectedShift);
+    if(!endTime) return alert(t('اكتب الوقت','Enter time'));
+    startTime = settings.startTime; shiftType = selectedShift;
   }
-  op.then(() => toast(t('تم تسجيل الحضور ✓','Attendance saved ✓')))
+  if(route.length > 200 || note.length > 200) return alert(t('البيانات طويلة جداً','Input too long'));
+
+  // One record per driver per date
+  const dup = Object.entries(attendance).find(([id,a]) => a.driverId===driverId && a.date===date && id!==editingAttendId);
+  let targetId = editingAttendId;
+  if(dup) {
+    if(editingAttendId) return alert(t('السائق مسجل بالفعل في هذا اليوم','This driver already has a record on that date'));
+    if(!confirm(t('السائق مسجل بالفعل في هذا اليوم. تستبدل السجل؟','This driver already has a record for this date. Replace it?'))) return;
+    targetId = dup[0];
+  }
+  const me = auth.currentUser?.uid || '';
+  const rec = { driverId, date, status:selectedStatus, startTime, endTime, shiftType,
+    driverName:driver.name||'', plate:driver.plate||'', busSign:driver.busSign||'', route, note };
+  const op = targetId
+    ? update(ref(db,'attendance/'+targetId), { ...rec, updatedBy:me, updatedAt:Date.now() })
+    : push(ref(db,'attendance'), { ...rec, timestamp:Date.now(), createdBy:me });
+  op.then(() => { toast(t('تم تسجيل الحضور ✓','Attendance saved ✓')); resetAttendForm(); })
     .catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); });
-  sendToSheets({ type:'attendance', date, driverName:driver.name||'', plate:driver.plate||'', busSign:driver.busSign||'', endTime, shiftType:shiftLabel(shiftType), route, note });
-  ['attendNote','attendRoute'].forEach(id=>document.getElementById(id).value='');
-  document.querySelectorAll('.shift-opt').forEach(o=>o.classList.remove('selected'));
-  selectedShift='';
-  document.getElementById('customTimeRow').style.display='none';
-  document.getElementById('attendDriverInfo').style.display='none';
+  // Sheets only receives new entries (edits would duplicate the row)
+  if(!targetId) sendToSheets({ type:'attendance', date, driverName:rec.driverName, plate:rec.plate, busSign:rec.busSign, endTime,
+    shiftType: selectedStatus==='present' ? shiftLabel(shiftType) : statusLabel(selectedStatus), route, note });
 }
 
 window.deleteAttend = function(id) {
@@ -734,24 +906,127 @@ function renderAttendance() {
     <td><b>${esc(a.driverName)}</b></td>
     <td><span class="badge badge-orange">${esc(a.plate)||'—'}</span></td>
     <td>${formatDate(a.date)}</td>
-    <td><span class="badge badge-green">7:30 ص</span></td>
-    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
-    <td><span class="badge ${shiftBadge(a.shiftType)}">${shiftLabel(a.shiftType)}</span></td>
+    <td>${startCell(a)}</td>
+    <td>${endCell(a)}</td>
+    <td>${typeCell(a)}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.route)||'—'}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.note)||'—'}</td>
-    <td>${isAdmin?`<button class="btn btn-danger" onclick="deleteAttend('${esc(id)}')">${t('مسح','Del')}</button>`:''}</td>
+    <td style="white-space:nowrap"><button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem" onclick="editAttendance('${esc(id)}')">${t('تعديل','Edit')}</button>
+    ${isAdmin?`<button class="btn btn-danger" onclick="deleteAttend('${esc(id)}')">${t('مسح','Del')}</button>`:''}</td>
   </tr>`).join('')}</tbody></table>`;
+}
+
+// ===== BULK ENTRY =====
+const BULK_CHOICES = ['half','normal','extra','off','sick'];
+let bulkState = {};   // driverId -> { choice, route }
+function bulkLabel(c) { return STATUSES[c] ? statusLabel(c) : `${shiftLabel(c)} ${formatTime(shiftEnd(c))}`; }
+function bulkDone(date) { return new Set(Object.values(attendance).filter(a => a.date===date).map(a => a.driverId)); }
+function bulkPending(date) {
+  const done = bulkDone(date);
+  return Object.entries(drivers).filter(([id,d]) => isActive(d) && !done.has(id));
+}
+
+function renderBulk() {
+  const el = document.getElementById('bulkTable'); if(!el) return;
+  const date = document.getElementById('bulkDate').value;
+  const done = bulkDone(date);
+  const list = Object.entries(drivers).filter(([,d]) => isActive(d));
+  if(!list.length){ el.innerHTML = `<div class="empty-state">${t('لا يوجد سائقين','No drivers yet')}</div>`; updateBulkBtn(); return; }
+  const opts = sel => `<option value="">—</option>` + BULK_CHOICES.map(c => `<option value="${c}"${sel===c?' selected':''}>${esc(bulkLabel(c))}</option>`).join('');
+  el.innerHTML = `
+    <div class="form-group" style="max-width:260px;margin-bottom:0.75rem;"><label>${t('تطبيق على الكل','Set all to')}</label>
+      <select onchange="bulkAll(this.value);this.value=''">${opts('')}</select></div>
+    <table><thead><tr><th>${t('السائق','Driver')}</th><th>${t('الحالة / الوردية','Status / Shift')}</th><th>${t('المسار','Route')}</th></tr></thead><tbody>
+    ${list.map(([id,d]) => done.has(id)
+      ? `<tr style="opacity:0.6"><td><b>${esc(d.name)}</b></td><td colspan="2"><span class="badge badge-green">${t('مسجل بالفعل','Already recorded')}</span></td></tr>`
+      : `<tr><td><b>${esc(d.name)}</b></td>
+          <td><select onchange="bulkSet('${esc(id)}','choice',this.value)">${opts(bulkState[id]?.choice)}</select></td>
+          <td><input type="text" maxlength="200" value="${esc(bulkState[id]?.route||'')}" oninput="bulkSet('${esc(id)}','route',this.value)" style="width:100%;min-width:160px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:inherit"/></td></tr>`
+    ).join('')}</tbody></table>`;
+  updateBulkBtn();
+}
+
+function bulkCount() {
+  const date = document.getElementById('bulkDate').value;
+  return bulkPending(date).filter(([id]) => bulkState[id]?.choice).length;
+}
+function updateBulkBtn() {
+  const b = document.getElementById('bulkSaveBtn'); if(!b) return;
+  const n = bulkCount();
+  b.textContent = `${t('💾 حفظ الكل','💾 Save all')} (${n})`;
+  b.disabled = n === 0;
+}
+window.bulkSet = function(id, key, val) {
+  bulkState[id] = { ...(bulkState[id]||{}), [key]: val };
+  if(key === 'choice') updateBulkBtn();
+}
+window.bulkAll = function(choice) {
+  if(!choice) return;
+  const date = document.getElementById('bulkDate').value;
+  bulkPending(date).forEach(([id]) => { bulkState[id] = { ...(bulkState[id]||{}), choice }; });
+  renderBulk();
+}
+
+window.saveBulk = function() {
+  const date = document.getElementById('bulkDate').value;
+  if(!date) return alert(t('اختر التاريخ','Select a date'));
+  const me = auth.currentUser?.uid || '';
+  const updates = {}, synced = [], savedIds = [];
+  let n = 0;
+  const now = Date.now();
+  bulkPending(date).forEach(([id,d]) => {
+    const s = bulkState[id]; if(!s?.choice) return;
+    const present = !STATUSES[s.choice];
+    const status = present ? 'present' : s.choice;
+    const rec = {
+      driverId:id, date, status,
+      startTime: present ? settings.startTime : '',
+      endTime: present ? shiftEnd(s.choice) : '',
+      shiftType: present ? s.choice : 'none',
+      driverName:d.name||'', plate:d.plate||'', busSign:d.busSign||'',
+      route:(s.route||'').trim().substring(0,200), note:'', timestamp: now + n, createdBy: me
+    };
+    updates['attendance/' + push(ref(db,'attendance')).key] = rec;
+    synced.push({ type:'attendance', date, driverName:rec.driverName, plate:rec.plate, busSign:rec.busSign, endTime:rec.endTime,
+      shiftType: present ? shiftLabel(s.choice) : statusLabel(status), route:rec.route, note:'' });
+    savedIds.push(id); n++;
+  });
+  if(!n) return;
+  const btn = document.getElementById('bulkSaveBtn'); btn.disabled = true;
+  update(ref(db), updates)
+    .then(() => { savedIds.forEach(id => delete bulkState[id]); synced.forEach(sendToSheets); toast(t(`تم تسجيل ${n} سائق ✓`,`${n} drivers saved ✓`)); })
+    .catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); })
+    .finally(renderBulk);
+}
+
+// ===== SETTINGS (admin) =====
+function fillSettingsForm() {
+  const map = { setStart:'startTime', setHalf:'halfEnd', setNormal:'normalEnd', setExtra:'extraEnd' };
+  Object.entries(map).forEach(([id,k]) => { const el = document.getElementById(id); if(el) el.value = settings[k]; });
+}
+window.saveSettings = function() {
+  if(!isAdmin) return alert(t('للمسؤول فقط','Admins only'));
+  const next = {
+    startTime: document.getElementById('setStart').value, halfEnd: document.getElementById('setHalf').value,
+    normalEnd: document.getElementById('setNormal').value, extraEnd: document.getElementById('setExtra').value
+  };
+  if(Object.values(next).some(v => !/^\d{2}:\d{2}$/.test(v))) return alert(t('اكتب كل الأوقات','Fill in every time'));
+  update(ref(db,'settings'), next)
+    .then(() => toast(t('تم حفظ الإعدادات ✓','Settings saved ✓')))
+    .catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); });
 }
 
 // ===== DASHBOARD =====
 function renderDashboard() {
   const today = new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Cairo'});
   const todayA = Object.values(attendance).filter(a=>a.date===today);
+  const presentA = todayA.filter(a=>statusOf(a)==='present');
   document.getElementById('statsRow').innerHTML=`
-    <div class="stat-card"><div class="stat-num">${Object.keys(drivers).length}</div><div class="stat-label">${t('إجمالي السائقين','Total Drivers')}</div></div>
-    <div class="stat-card"><div class="stat-num">${todayA.length}</div><div class="stat-label">${t('حضور اليوم','Today Attendance')}</div></div>
-    <div class="stat-card"><div class="stat-num">${todayA.filter(a=>shiftCode(a.shiftType)==='extra').length}</div><div class="stat-label">${t('شغل إضافي اليوم','Extra Shifts Today')}</div></div>
-    <div class="stat-card"><div class="stat-num">${todayA.filter(a=>shiftCode(a.shiftType)==='half').length}</div><div class="stat-label">${t('نص يوم اليوم','Half Days Today')}</div></div>`;
+    <div class="stat-card"><div class="stat-num">${Object.values(drivers).filter(isActive).length}</div><div class="stat-label">${t('السائقين النشطين','Active Drivers')}</div></div>
+    <div class="stat-card"><div class="stat-num">${presentA.length}</div><div class="stat-label">${t('حضور اليوم','Today Attendance')}</div></div>
+    <div class="stat-card"><div class="stat-num">${todayA.length-presentA.length}</div><div class="stat-label">${t('إجازة / مرضي اليوم','Off / Sick Today')}</div></div>
+    <div class="stat-card"><div class="stat-num">${presentA.filter(a=>shiftCode(a.shiftType)==='extra').length}</div><div class="stat-label">${t('شغل إضافي اليوم','Extra Shifts Today')}</div></div>
+    <div class="stat-card"><div class="stat-num">${presentA.filter(a=>shiftCode(a.shiftType)==='half').length}</div><div class="stat-label">${t('نص يوم اليوم','Half Days Today')}</div></div>`;
   const el = document.getElementById('todayTable');
   if(!todayA.length){ el.innerHTML=`<div class="empty-state">${t('لا يوجد حضور اليوم','No attendance today')}</div>`; return; }
   el.innerHTML=`<table><thead><tr>
@@ -763,9 +1038,9 @@ function renderDashboard() {
     <td><b>${esc(a.driverName)}</b></td>
     <td><span class="badge badge-orange">${esc(a.plate)||'—'}</span></td>
     <td><span class="badge badge-blue">${esc(a.busSign)||'—'}</span></td>
-    <td><span class="badge badge-green">7:30 ص</span></td>
-    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
-    <td><span class="badge ${shiftBadge(a.shiftType)}">${shiftLabel(a.shiftType)}</span></td>
+    <td>${startCell(a)}</td>
+    <td>${endCell(a)}</td>
+    <td>${typeCell(a)}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.route)||'—'}</td>
   </tr>`).join('')}</tbody></table>`;
 }
@@ -775,7 +1050,9 @@ function renderReports() {
   renderDriverReport();
   const counts={};
   Object.values(attendance).forEach(a=>{
-    if(!counts[a.driverName]) counts[a.driverName]={total:0,half:0,normal:0,extra:0,custom:0};
+    if(!counts[a.driverName]) counts[a.driverName]={total:0,half:0,normal:0,extra:0,custom:0,off:0,sick:0};
+    const st = statusOf(a);
+    if(st !== 'present') { counts[a.driverName][st]++; return; }
     counts[a.driverName].total++;
     counts[a.driverName][{half:'half',normal:'normal',extra:'extra',custom:'custom'}[shiftCode(a.shiftType)]]++;
   });
@@ -786,13 +1063,14 @@ function renderReports() {
     <th>${t('السائق','Driver')}</th><th>${t('إجمالي','Total')}</th>
     <th>${t('نص يوم','Half Day')}</th><th>${t('عادي','Normal')}</th>
     <th>${t('إضافي','Extra')}</th><th>${t('وقت محدد','Custom')}</th>
+    <th>${t('إجازة','Off')}</th><th>${t('مرضي','Sick')}</th>
   </tr></thead><tbody>
   ${names.map(n=>`<tr>
     <td><b>${esc(n)}</b></td>
     <td><span class="badge badge-blue">${counts[n].total}</span></td>
     <td>${counts[n].half||'—'}</td><td>${counts[n].normal||'—'}</td>
     <td>${counts[n].extra?`<b style="color:var(--red)">${counts[n].extra}</b>`:'—'}</td>
-    <td>${counts[n].custom||'—'}</td>
+    <td>${counts[n].custom||'—'}</td><td>${counts[n].off||'—'}</td><td>${counts[n].sick||'—'}</td>
   </tr>`).join('')}</tbody></table>`;
 }
 
@@ -819,16 +1097,16 @@ window.renderDriverReport = function() {
   </tr></thead><tbody>
   ${rows.map(([,a])=>`<tr>
     <td>${formatDate(a.date)}</td>
-    <td><span class="badge badge-green">7:30 ص</span></td>
-    <td><b style="color:var(--orange)">${formatTime(a.endTime)}</b></td>
-    <td><span class="badge ${shiftBadge(a.shiftType)}">${shiftLabel(a.shiftType)}</span></td>
+    <td>${startCell(a)}</td>
+    <td>${endCell(a)}</td>
+    <td>${typeCell(a)}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.route)||'—'}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.note)||'—'}</td>
   </tr>`).join('')}</tbody></table></div>`;
 }
 
 // ===== HELPERS =====
-function shiftBadge(s){ return {half:'badge-amber',normal:'badge-blue',extra:'badge-red',custom:'badge-green'}[shiftCode(s)]; }
+function shiftBadge(s){ return {half:'badge-amber',normal:'badge-blue',extra:'badge-red',custom:'badge-green',none:'badge-blue'}[shiftCode(s)]; }
 function formatDate(d){ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
 function formatTime(t){ if(!t) return '—'; const [h,m]=t.split(':'); const hr=parseInt(h); return `${hr>12?hr-12:hr===0?12:hr}:${m} ${hr>=12?'م':'ص'}`; }
 
@@ -961,7 +1239,7 @@ function renderWorkOrders() {
   </tr>`).join('')}</tbody></table>`;
 }
 
-function renderAll(){ renderDashboard(); renderAttendance(); renderAllDrivers(); renderWorkOrders(); }
+function renderAll(){ renderDashboard(); renderAttendance(); renderAllDrivers(); renderWorkOrders(); renderStatusOptions(); renderBulk(); }
 </script>
 </body>
 </html>
