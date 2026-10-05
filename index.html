@@ -539,6 +539,8 @@ function statusOf(a) { return STATUSES[a.status] ? a.status : 'present'; }
 function statusLabel(s) { return currentLang === 'ar' ? STATUSES[s].ar : STATUSES[s].en; }
 function normDigits(s) { return String(s||'').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); }
 function isActive(d) { return d && d.status !== 'inactive'; }
+// Always show a driver's CURRENT name (records keep the name they were saved with as a fallback, e.g. deleted drivers)
+function drvName(r) { return (r.driverId && drivers[r.driverId] && drivers[r.driverId].name) || r.driverName || ''; }
 // Table cells that depend on the attendance status
 function startCell(a) { return statusOf(a)==='present' ? `<span class="badge badge-green">${formatTime(a.startTime||settings.startTime)}</span>` : '—'; }
 function endCell(a) { return statusOf(a)==='present' ? `<b style="color:var(--orange)">${formatTime(a.endTime)}</b>` : '—'; }
@@ -764,7 +766,7 @@ async function sendToSheets(data) {
   } catch (err) { console.log('Sheets sync error:', err); }
 }
 
-window.saveDriver = function() {
+window.saveDriver = async function() {
   const name = document.getElementById('driverName').value.trim();
   const phone = normDigits(document.getElementById('driverPhone').value).replace(/[\s-]/g,'');
   const license = document.getElementById('driverLicense').value.trim();
@@ -773,6 +775,8 @@ window.saveDriver = function() {
   if(!name) return alert(t('اكتب اسم السائق','Enter driver name'));
   if(phone && !/^01[0125]\d{8}$/.test(phone)) return alert(t('رقم التليفون لازم يكون موبايل مصري (01xxxxxxxxx)','Phone must be an Egyptian mobile number (01xxxxxxxxx)'));
   if(name.length > 100 || license.length > 50 || plate.length > 30 || busSign.length > 30) return alert(t('البيانات طويلة جداً','Input too long'));
+  const sameName = Object.entries(drivers).some(([id,d]) => id !== editingDriverId && normName(d.name) === normName(name));
+  if(sameName && !(await askConfirm(t('يوجد سائق بنفس الاسم. تكمل؟','A driver with this name already exists. Continue?')))) return;
   const fields = { name, phone, plate, busSign, license };
   if(editingDriverId) {
     update(ref(db,'drivers/'+editingDriverId), fields)
@@ -867,11 +871,11 @@ window.loadDriverProfile = function() {
   if(!rows.length){ aa.innerHTML=`<div class="empty-state">${t('لا يوجد حضور لهذا السائق','No attendance records')}</div>`; return; }
   aa.innerHTML=`<h3 style="color:var(--brown);margin-bottom:0.75rem;font-size:0.95rem;">${t('سجل الحضور','Attendance History')}</h3>
   <div class="table-wrap"><table><thead><tr>
-    <th>${t('التاريخ','Date')}</th><th>${t('البداية','Start')}</th><th>${t('النهاية','End')}</th>
+    <th>${t('التاريخ','Date')}</th><th>${t('الباص','Bus')}</th><th>${t('البداية','Start')}</th><th>${t('النهاية','End')}</th>
     <th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th><th>${t('ملاحظات','Notes')}</th>
   </tr></thead><tbody>
   ${rows.map(([,a])=>`<tr>
-    <td>${formatDate(a.date)}</td>
+    <td>${formatDate(a.date)}</td><td><span class="badge badge-blue">${esc(a.busSign)||'—'}</span> <span style="font-size:0.78rem;color:var(--muted)">${esc(a.plate)}</span></td>
     <td>${startCell(a)}</td>
     <td>${endCell(a)}</td>
     <td>${typeCell(a)}</td>
@@ -953,7 +957,7 @@ window.editAttendance = function(id) {
   const a = attendance[id]; if(!a) return;
   editingAttendId = id;
   const sel = document.getElementById('attendDriver');
-  if(![...sel.options].some(o => o.value === a.driverId)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(a.driverId)}">${esc(a.driverName)}</option>`);
+  if(![...sel.options].some(o => o.value === a.driverId)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(a.driverId)}">${esc(drvName(a))}</option>`);
   sel.value = a.driverId;
   document.getElementById('attendDate').value = a.date || '';
   document.getElementById('attendRoute').value = a.route || '';
@@ -962,7 +966,7 @@ window.editAttendance = function(id) {
   selectedShift = selectedStatus==='present' ? shiftCode(a.shiftType) : '';
   document.getElementById('customTime').value = selectedShift==='custom' ? (a.endTime || '') : '';
   const banner = document.getElementById('attendEditBanner');
-  banner.textContent = t('✏️ تعديل تسجيل: ','✏️ Editing record: ') + (a.driverName||'') + ' — ' + formatDate(a.date);
+  banner.textContent = t('✏️ تعديل تسجيل: ','✏️ Editing record: ') + drvName(a) + ' — ' + formatDate(a.date);
   banner.style.display = 'block';
   const cancel = document.getElementById('attendCancelBtn');
   cancel.textContent = t('إلغاء التعديل','Cancel edit'); cancel.style.display = '';
@@ -1031,7 +1035,7 @@ function renderAttendance() {
     <th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th><th>${t('ملاحظات','Notes')}</th><th></th>
   </tr></thead><tbody>
   ${rows.map(([id,a])=>`<tr>
-    <td><b>${esc(a.driverName)}</b></td>
+    <td><b>${esc(drvName(a))}</b></td>
     <td><span class="badge badge-orange">${esc(a.plate)||'—'}</span></td>
     <td>${formatDate(a.date)}</td>
     <td>${startCell(a)}</td>
@@ -1164,7 +1168,7 @@ function renderDashboard() {
     <th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th>
   </tr></thead><tbody>
   ${[...todayA].reverse().map(a=>`<tr>
-    <td><b>${esc(a.driverName)}</b></td>
+    <td><b>${esc(drvName(a))}</b></td>
     <td><span class="badge badge-orange">${esc(a.plate)||'—'}</span></td>
     <td><span class="badge badge-blue">${esc(a.busSign)||'—'}</span></td>
     <td>${startCell(a)}</td>
@@ -1210,14 +1214,14 @@ function reportRecords() {
   const driverId = document.getElementById('reportDriverSelect').value;
   return Object.values(attendance)
     .filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!driverId || a.driverId === driverId))
-    .sort((a,b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.driverName).localeCompare(String(b.driverName))));
+    .sort((a,b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : String(drvName(a)).localeCompare(String(drvName(b)))));
 }
 
 function reportSummary(records) {
   const map = {};
   records.forEach(a => {
     const key = a.driverId || a.driverName;
-    const r = map[key] || (map[key] = { name:a.driverName, days:0, half:0, normal:0, extra:0, custom:0, off:0, sick:0, hours:0 });
+    const r = map[key] || (map[key] = { name:drvName(a), days:0, half:0, normal:0, extra:0, custom:0, off:0, sick:0, hours:0 });
     const st = statusOf(a);
     if(st !== 'present') { r[st]++; return; }
     r.days++; r.hours += hoursOf(a);
@@ -1264,7 +1268,7 @@ function renderReports() {
     <th>${t('الساعات','Hours')}</th><th>${t('النوع','Type')}</th><th>${t('المسار','Route')}</th><th>${t('ملاحظات','Notes')}</th>
   </tr></thead><tbody>
   ${records.map(a => `<tr>
-    <td>${formatDate(a.date)}</td><td><b>${esc(a.driverName)}</b></td>
+    <td>${formatDate(a.date)}</td><td><b>${esc(drvName(a))}</b></td>
     <td>${startCell(a)}</td><td>${endCell(a)}</td>
     <td>${statusOf(a)==='present' ? fmtHours(hoursOf(a)) : '—'}</td><td>${typeCell(a)}</td>
     <td style="font-size:0.82rem;color:var(--muted)">${esc(a.route)||'—'}</td>
@@ -1303,7 +1307,7 @@ window.exportDetailCsv = function() {
   if(!records.length) return alert(t('لا يوجد بيانات','No data'));
   downloadCsv(exportName('details'), [
     ['Date','Driver','Plate','Bus','Status','Shift','Start','End','Hours','Route','Notes'],
-    ...records.map(a => { const st = statusOf(a); return [a.date, a.driverName, a.plate, a.busSign, STATUSES[st].en,
+    ...records.map(a => { const st = statusOf(a); return [a.date, drvName(a), a.plate, a.busSign, STATUSES[st].en,
       st==='present' ? SHIFTS[shiftCode(a.shiftType)].en : '', st==='present' ? (a.startTime||settings.startTime) : '', a.endTime||'',
       st==='present' ? fmtHours(hoursOf(a)) : '', a.route, a.note]; })
   ]);
@@ -1337,7 +1341,7 @@ function renderDashboardExtras() {
   const [mFrom, mTo] = monthRange(today, 0);
   const extra = {};
   Object.values(attendance).forEach(a => {
-    if(a.date>=mFrom && a.date<=mTo && statusOf(a)==='present' && shiftCode(a.shiftType)==='extra') extra[a.driverName] = (extra[a.driverName]||0)+1;
+    if(a.date>=mFrom && a.date<=mTo && statusOf(a)==='present' && shiftCode(a.shiftType)==='extra') extra[drvName(a)] = (extra[drvName(a)]||0)+1;
   });
   const top = Object.entries(extra).sort((a,b) => b[1]-a[1]).slice(0,5);
   document.getElementById('topExtra').innerHTML = top.length
@@ -1439,7 +1443,7 @@ window.woSave = async function() {
   btn.disabled = true; woStatus(t('⏳ جاري الحفظ ورفع الصورة...','⏳ Saving and uploading photo...'));
   try {
     // 1) photo -> driver's Drive folder, row -> driver's own sheet tab
-    const r = await callScript({ type:'saveWorkOrder', driverName, sheetName, date, workOrder, image: woImage });
+    const r = await callScript({ type:'saveWorkOrder', driverId, driverName, sheetName, date, workOrder, image: woImage });
     // 2) record in the app database
     await push(ref(db,'workOrders'), { driverId, driverName, sheetName, date, workOrder, photoUrl: r.photoUrl, timestamp: Date.now() });
     woImage = null;
@@ -1472,7 +1476,7 @@ function renderWorkOrders() {
     <th>${t('الاسم في الورقة','Name on sheet')}</th><th>${t('الصورة','Photo')}</th><th></th>
   </tr></thead><tbody>
   ${rows.map(([id,w])=>`<tr>
-    <td><b>${esc(w.driverName)}</b></td><td>${formatDate(w.date)}</td>
+    <td><b>${esc(drvName(w))}</b></td><td>${formatDate(w.date)}</td>
     <td>${esc(w.workOrder)}</td><td style="font-size:0.82rem;color:var(--muted)">${esc(w.sheetName)||'—'}</td>
     <td>${/^https:\/\//.test(w.photoUrl||'')?`<a href="${esc(w.photoUrl)}" target="_blank" rel="noopener">${t('فتح','Open')}</a>`:'—'}</td>
     <td>${isAdmin?`<button class="btn btn-danger" onclick="deleteWorkOrder('${esc(id)}')">${t('مسح','Del')}</button>`:''}</td>

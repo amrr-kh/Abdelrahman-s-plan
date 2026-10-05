@@ -106,35 +106,63 @@ function extractSheet_(data) {
 
 // ---------- save ----------
 function saveWorkOrder_(data, auth) {
+  var driverId = clean_(data.driverId, 100);
   var driverName = clean_(data.driverName, 100);
   var sheetName = clean_(data.sheetName, 100) || '';
   var workOrder = clean_(data.workOrder, 200);
   var date = data.date;
-  if (!driverName || !workOrder || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return { ok: false, error: 'missing fields' };
+  if (!driverId || !driverName || !workOrder || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return { ok: false, error: 'missing fields' };
   if (typeof data.image !== 'string' || !data.image || data.image.length > MAX_IMAGE_B64) return { ok: false, error: 'invalid image' };
 
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     // Photo -> Drive/<root>/<driver>/
-    var folder = folder_(folder_(DriveApp.getRootFolder(), DRIVE_ROOT_NAME), safe_(driverName));
+    // Folder and tab are matched by driver ID, so renaming a driver renames them instead of creating new ones
+    var folder = driverFolder_(folder_(DriveApp.getRootFolder(), DRIVE_ROOT_NAME), driverId, driverName);
     var file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(data.image), 'image/jpeg', date + '_' + safe_(workOrder) + '.jpg'));
     var photoUrl = file.getUrl();
 
     // Row -> the driver's own tab
     var sid = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
     var ss = sid ? SpreadsheetApp.openById(sid) : SpreadsheetApp.getActiveSpreadsheet();
-    var tabName = safe_(driverName).substring(0, 99);
-    var sh = ss.getSheetByName(tabName);
-    if (!sh) {
-      sh = ss.insertSheet(tabName);
-      sh.appendRow(['Date', 'Name on sheet', 'Work order', 'Photo', 'Saved at', 'Saved by']);
-      sh.setFrozenRows(1);
-      sh.setRightToLeft(true);
-    }
+    var sh = driverSheet_(ss, driverId, driverName);
     sh.appendRow([text_(date), text_(sheetName), text_(workOrder), photoUrl, new Date(), auth.uid]);
     return { ok: true, photoUrl: photoUrl };
   } finally { lock.releaseLock(); }
+}
+
+// ---------- per-driver Drive folder / sheet tab (keyed by driver ID) ----------
+function driverFolder_(root, driverId, name) {
+  var wanted = safe_(name);
+  var subs = root.getFolders(), found = null, nameTaken = false;
+  while (subs.hasNext()) {
+    var f = subs.next();
+    if (f.getDescription() === driverId) found = f;
+    else if (f.getName() === wanted) nameTaken = true;
+  }
+  var label = nameTaken ? wanted + ' (' + driverId.slice(-4) + ')' : wanted;   // two drivers, same name
+  if (found) { if (found.getName() !== label) found.setName(label); return found; }
+  var created = root.createFolder(label);
+  created.setDescription(driverId);
+  return created;
+}
+
+function driverSheet_(ss, driverId, name) {
+  var found = null, takenByOther = false;
+  ss.getSheets().forEach(function (s) {
+    var tagged = s.createDeveloperMetadataFinder().withKey('driverId').find();
+    if (tagged.length && tagged[0].getValue() === driverId) found = s;
+    else if (s.getName() === safe_(name).substring(0, 99)) takenByOther = true;
+  });
+  var label = (takenByOther ? safe_(name).substring(0, 90) + ' (' + driverId.slice(-4) + ')' : safe_(name).substring(0, 99));
+  if (found) { if (found.getName() !== label) found.setName(label); return found; }
+  var sh = ss.insertSheet(label);
+  sh.addDeveloperMetadata('driverId', driverId);
+  sh.appendRow(['Date', 'Name on sheet', 'Work order', 'Photo', 'Saved at', 'Saved by']);
+  sh.setFrozenRows(1);
+  sh.setRightToLeft(true);
+  return sh;
 }
 
 // ---------- helpers ----------
