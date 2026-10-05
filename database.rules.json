@@ -1,0 +1,46 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "drivers": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      "$id": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".validate": "newData.hasChild('name')",
+        "name":    { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+        "phone":   { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "plate":   { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "busSign": { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "license": { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "$other":  { ".validate": false }
+      }
+    },
+
+    "attendance": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      "$id": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".validate": "newData.hasChildren(['driverId', 'date', 'startTime', 'endTime', 'shiftType', 'timestamp'])",
+        "driverId":   { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "date":       { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+        "startTime":  { ".validate": "newData.isString() && newData.val().matches(/^\\d{2}:\\d{2}$/)" },
+        "endTime":    { ".validate": "newData.isString() && newData.val().matches(/^\\d{2}:\\d{2}$/)" },
+        "shiftType":  { ".validate": "newData.isString() && (newData.val() === 'half' || newData.val() === 'normal' || newData.val() === 'extra' || newData.val() === 'custom')" },
+        "driverName": { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "plate":      { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "busSign":    { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "route":      { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "note":       { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "timestamp":  { ".validate": "newData.isNumber()" },
+        "$other":     { ".validate": false }
+      }
+    }
+  }
+}
