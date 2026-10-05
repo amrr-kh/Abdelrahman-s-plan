@@ -43,6 +43,8 @@ Do these before the first deploy; otherwise nobody can log in.
 3. **Restrict the Firebase API key** to your domain in Google Cloud Console.
 4. **Host** the repo root as a static site (GitHub Pages: Settings → Pages → deploy from `main`).
 
+- **Installable (PWA)** on phones, works as a home-screen app; mobile bottom navigation; in-app dialogs; offline banner.
+
 ## Run locally
 No build step. Serve the folder over HTTP (Firebase Auth does not work from `file://`):
 

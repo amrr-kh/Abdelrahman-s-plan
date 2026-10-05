@@ -3,11 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#5C2D0E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Travel Band — نظام إدارة النقل السياحي</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --orange: #E8620A;
+  --orange: #C2500A;
   --orange-light: #F97316;
   --orange-pale: #FEF3EC;
   --brown: #5C2D0E;
@@ -64,6 +68,7 @@ nav { display:flex; overflow-x:auto; padding:0; }
 .nav-btn { padding:12px 18px; background:none; border:none; border-bottom:3px solid transparent; color:rgba(255,255,255,0.6); font-family:'Cairo','Poppins',sans-serif; font-size:0.9rem; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
 .nav-btn.active { color:var(--orange-light); border-bottom-color:var(--orange-light); }
 .nav-btn:hover { color:white; }
+.nav-btn .nav-ico { margin-inline-end:6px; }
 
 /* MAIN */
 main { padding:1.5rem; max-width:1200px; margin:0 auto; }
@@ -152,6 +157,41 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
 .empty-state { text-align:center; color:var(--muted); padding:2.5rem; font-size:0.9rem; }
 .section-sep { height:1px; background:var(--border); margin:1.5rem 0; }
 
+/* ACCESSIBILITY */
+:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+.lock-input:focus-visible, .form-group input:focus-visible, .form-group select:focus-visible { outline:3px solid var(--blue); }
+@media (prefers-reduced-motion: reduce) { * { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+.shift-opt { font-family:inherit; }
+.lang-switch { font-family:inherit; }
+
+/* OFFLINE BANNER + DIALOG */
+#offlineBanner { display:none; background:var(--amber); color:white; text-align:center; padding:6px 12px; font-size:0.85rem; font-weight:700; position:sticky; top:0; z-index:150; }
+#offlineBanner.show { display:block; }
+#dialogOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900; display:none; align-items:center; justify-content:center; padding:1rem; }
+#dialogOverlay.open { display:flex; }
+.dialog { background:white; border-radius:16px; padding:1.5rem; width:100%; max-width:380px; }
+.dialog p { margin-bottom:1.25rem; line-height:1.7; white-space:pre-line; }
+.dialog-actions { display:flex; gap:0.75rem; justify-content:flex-end; flex-wrap:wrap; }
+
+/* MOBILE */
+.sticky-actions { position:sticky; bottom:0; background:white; padding:0.75rem 0; margin-top:0.5rem; z-index:20; }
+@media(max-width:700px) {
+  body { padding-bottom:64px; }
+  nav { position:fixed; bottom:0; inset-inline:0; background:var(--brown); z-index:120; box-shadow:0 -2px 8px rgba(0,0,0,0.25); justify-content:flex-start; }
+  .nav-btn { flex:0 0 auto; min-width:76px; padding:8px 10px; font-size:0.72rem; display:flex; flex-direction:column; align-items:center; gap:2px; border-bottom:none; border-top:3px solid transparent; line-height:1.3; }
+  .nav-btn.active { border-top-color:var(--orange-light); }
+  .nav-btn .nav-ico { font-size:1.25rem; line-height:1; margin:0; }
+  .header-top { flex-wrap:wrap; gap:0.5rem; }
+  .clock-wrap { display:none; }
+  .header-actions { gap:8px; flex-wrap:wrap; }
+  .btn, .add-driver-btn, .lock-btn, .shift-opt, .form-group select, .form-group input, .lock-input { min-height:44px; font-size:16px; }
+  .btn-danger { min-height:36px; }
+  .sticky-actions { bottom:64px; }
+  .stats-row { grid-template-columns:repeat(2,1fr); }
+  .card { padding:1rem; }
+  footer { font-size:0.75rem; }
+  #toast { bottom:84px; }
+}
 @media print {
   header, footer, .no-print, #toast, #lockScreen, #loadingOverlay, .modal-overlay { display:none !important; }
   .page { display:none !important; } .page.active { display:block !important; }
@@ -161,6 +201,8 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
 </style>
 </head>
 <body>
+<div id="offlineBanner" role="status" aria-live="polite"></div>
+<div id="dialogOverlay" role="dialog" aria-modal="true" aria-labelledby="dialogMsg"><div class="dialog"><p id="dialogMsg"></p><div class="dialog-actions"><button class="btn btn-secondary" id="dialogCancel"></button><button class="btn btn-primary" id="dialogOk"></button></div></div></div>
 
 <!-- LOADING -->
 <div id="loadingOverlay">
@@ -185,17 +227,17 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
 
 <!-- ADD DRIVER MODAL -->
 <div class="modal-overlay" id="addDriverModal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="driverModalTitle">
     <div class="modal-title">
       <span id="driverModalTitle">➕ إضافة سائق جديد</span>
-      <button class="modal-close" onclick="closeModal()">×</button>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">×</button>
     </div>
     <div class="form-grid" style="grid-template-columns:1fr">
       <div class="form-group"><label data-ar="اسم السائق" data-en="Driver Name">اسم السائق</label><input type="text" id="driverName" maxlength="100"/></div>
       <div class="form-group"><label data-ar="رقم التليفون المصري" data-en="Egyptian Phone Number">رقم التليفون المصري</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx" maxlength="11" inputmode="numeric" dir="ltr"/></div>
       <div class="form-group"><label data-ar="رقم الرخصة" data-en="License Number">رقم الرخصة</label><input type="text" id="driverLicense" maxlength="50"/></div>
-      <div class="form-group"><label data-ar="رقم لوحة العربية (مصري)" data-en="Egyptian Plate Number">رقم لوحة العربية (مصري)</label><input type="text" id="driverPlate" placeholder="أ ب ج ١٢٣٤"/></div>
-      <div class="form-group"><label data-ar="رقم / علامة الباص" data-en="Bus Number / Sign">رقم / علامة الباص</label><input type="text" id="driverBusSign" placeholder="مثال: B12"/></div>
+      <div class="form-group"><label data-ar="رقم لوحة العربية (مصري)" data-en="Egyptian Plate Number">رقم لوحة العربية (مصري)</label><input type="text" id="driverPlate" placeholder="أ ب ج ١٢٣٤" data-ph-ar="أ ب ج ١٢٣٤" data-ph-en="ABC 1234"/></div>
+      <div class="form-group"><label data-ar="رقم / علامة الباص" data-en="Bus Number / Sign">رقم / علامة الباص</label><input type="text" id="driverBusSign" placeholder="مثال: B12" data-ph-ar="مثال: B12" data-ph-en="e.g. B12"/></div>
 
     </div>
     <br/>
@@ -219,20 +261,20 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
     </div>
     <div class="header-actions">
       <button class="add-driver-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.3)" onclick="doLogout()" data-ar="خروج" data-en="Logout">خروج</button>
-      <div class="lang-switch" onclick="toggleLang()">
+      <button type="button" class="lang-switch" onclick="toggleLang()" aria-label="Switch language / تغيير اللغة">
         <div class="lang-dot" id="langDot">ع</div>
         <span id="langLabel">AR</span>
-      </div>
+      </button>
       <button class="add-driver-btn" onclick="openModal()" data-ar="➕ إضافة سائق" data-en="➕ Add Driver">➕ إضافة سائق</button>
     </div>
   </div>
-  <nav>
-    <button class="nav-btn active" onclick="showPage('dashboard',this)" data-ar="📊 الرئيسية" data-en="📊 Dashboard">📊 الرئيسية</button>
-    <button class="nav-btn" onclick="showPage('drivers',this)" data-ar="👤 السائقين" data-en="👤 Drivers">👤 السائقين</button>
-    <button class="nav-btn" onclick="showPage('attendance',this)" data-ar="📋 الحضور" data-en="📋 Attendance">📋 الحضور</button>
-    <button class="nav-btn" onclick="showPage('workorders',this)" data-ar="📷 أوامر الشغل" data-en="📷 Work Orders">📷 أوامر الشغل</button>
-    <button class="nav-btn" id="navSettings" style="display:none" onclick="showPage('settings',this)" data-ar="⚙️ الإعدادات" data-en="⚙️ Settings">⚙️ الإعدادات</button>
-    <button class="nav-btn" onclick="showPage('reports',this)" data-ar="📈 التقارير" data-en="📈 Reports">📈 التقارير</button>
+  <nav aria-label="Main">
+    <button class="nav-btn active" onclick="showPage('dashboard',this)"><span class="nav-ico" aria-hidden="true">📊</span><span data-ar="الرئيسية" data-en="Dashboard">الرئيسية</span></button>
+    <button class="nav-btn" onclick="showPage('drivers',this)"><span class="nav-ico" aria-hidden="true">👤</span><span data-ar="السائقين" data-en="Drivers">السائقين</span></button>
+    <button class="nav-btn" onclick="showPage('attendance',this)"><span class="nav-ico" aria-hidden="true">📋</span><span data-ar="الحضور" data-en="Attendance">الحضور</span></button>
+    <button class="nav-btn" onclick="showPage('workorders',this)"><span class="nav-ico" aria-hidden="true">📷</span><span data-ar="أوامر الشغل" data-en="Work Orders">أوامر الشغل</span></button>
+    <button class="nav-btn" id="navSettings" style="display:none" onclick="showPage('settings',this)"><span class="nav-ico" aria-hidden="true">⚙️</span><span data-ar="الإعدادات" data-en="Settings">الإعدادات</span></button>
+    <button class="nav-btn" onclick="showPage('reports',this)"><span class="nav-ico" aria-hidden="true">📈</span><span data-ar="التقارير" data-en="Reports">التقارير</span></button>
   </nav>
 </header>
 
@@ -312,7 +354,7 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
 
       <div class="form-group" style="margin-bottom:1rem;">
         <label data-ar="برنامج الباص / المسار" data-en="Bus Program / Route">برنامج الباص / المسار</label>
-        <input type="text" id="attendRoute" maxlength="200" placeholder="مثال: مطار — فندق نيل هيلتون"/>
+        <input type="text" id="attendRoute" maxlength="200" placeholder="مثال: مطار — فندق نيل هيلتون" data-ph-ar="مثال: مطار — فندق نيل هيلتون" data-ph-en="e.g. Airport — Nile Hilton"/>
       </div>
       <div style="margin-bottom:1rem;"><button class="btn btn-secondary" id="repeatLastBtn" onclick="repeatLast()" style="display:none"></button></div>
 
@@ -330,8 +372,8 @@ footer .footer-logo img { height:32px; filter:brightness(0) invert(1); }
         <label data-ar="ملاحظات" data-en="Notes">ملاحظات</label>
         <input type="text" id="attendNote" maxlength="200"/>
       </div>
-      <button class="btn btn-primary" id="attendSaveBtn" onclick="saveAttendance()" data-ar="حفظ الحضور" data-en="Save Attendance">حفظ الحضور</button>
-      <button class="btn btn-secondary" id="attendCancelBtn" onclick="cancelEditAttendance()" style="display:none;margin-inline-start:8px"></button>
+      <div class="sticky-actions"><button class="btn btn-primary" id="attendSaveBtn" onclick="saveAttendance()" data-ar="حفظ الحضور" data-en="Save Attendance">حفظ الحضور</button>
+      <button class="btn btn-secondary" id="attendCancelBtn" onclick="cancelEditAttendance()" style="display:none;margin-inline-start:8px"></button></div>
     </div>
 
     <div class="card">
@@ -472,6 +514,9 @@ const DEFAULT_SETTINGS = { startTime:'07:30', halfEnd:'12:30', normalEnd:'14:00'
 let settings = { ...DEFAULT_SETTINGS };
 let loaded = 0;
 let currentLang = 'ar';
+let savedLang = null;
+try { savedLang = localStorage.getItem('tb_lang'); } catch(_) {}
+let isOffline = false, loadTimer = null, lastFocus = null;
 let isAdmin = false;
 let unsubscribers = [];
 let clockTimer = null;
@@ -510,16 +555,69 @@ function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
-function checkLoaded() { loaded++; if (loaded >= 4) { document.getElementById('loadingOverlay').style.display='none'; migrateShiftCodes(); } }
+// ===== DIALOGS (replace browser alert/confirm) =====
+let dialogResolve = null;
+function openDialog(msg, withCancel) {
+  return new Promise(resolve => {
+    if (dialogResolve) dialogResolve(false);
+    dialogResolve = resolve;
+    document.getElementById('dialogMsg').textContent = msg;
+    const ok = document.getElementById('dialogOk'), cancel = document.getElementById('dialogCancel');
+    ok.textContent = withCancel ? t('تأكيد','Confirm') : t('حسناً','OK');
+    cancel.textContent = t('إلغاء','Cancel');
+    cancel.style.display = withCancel ? '' : 'none';
+    lastFocus = document.activeElement;
+    document.getElementById('dialogOverlay').classList.add('open');
+    ok.focus();
+  });
+}
+function closeDialog(result) {
+  document.getElementById('dialogOverlay').classList.remove('open');
+  if (dialogResolve) { const r = dialogResolve; dialogResolve = null; r(result); }
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+const alert = msg => { openDialog(String(msg), false); };
+const askConfirm = msg => openDialog(String(msg), true);
+document.getElementById('dialogOk').addEventListener('click', () => closeDialog(true));
+document.getElementById('dialogCancel').addEventListener('click', () => closeDialog(false));
+
+// Escape closes the top-most dialog/modal; Tab stays inside it
+document.addEventListener('keydown', e => {
+  const dlg = document.getElementById('dialogOverlay'), modal = document.getElementById('addDriverModal');
+  const box = dlg.classList.contains('open') ? dlg : modal.classList.contains('open') ? modal : null;
+  if (!box) return;
+  if (e.key === 'Escape') { e.preventDefault(); if (box === dlg) closeDialog(false); else closeModal(); return; }
+  if (e.key === 'Tab') {
+    const f = [...box.querySelectorAll('button,input,select,textarea,[href]')].filter(x => !x.disabled && x.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length-1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+// ===== OFFLINE BANNER =====
+function updateOfflineBanner() {
+  const b = document.getElementById('offlineBanner');
+  b.textContent = t('⚠️ لا يوجد اتصال — التغييرات ستُحفظ عند عودة الإنترنت، لا تغلق الصفحة','⚠️ Offline — changes sync when you reconnect; keep this page open');
+  b.classList.toggle('show', isOffline);
+}
+window.addEventListener('offline', () => { isOffline = true; updateOfflineBanner(); });
+window.addEventListener('online', () => { isOffline = false; updateOfflineBanner(); });
+
+function checkLoaded() { loaded++; if (loaded >= 4) { clearTimeout(loadTimer); document.getElementById('loadingOverlay').style.display='none'; migrateShiftCodes(); } }
 
 function startListening() {
   loaded = 0;
+  clearTimeout(loadTimer);
+  loadTimer = setTimeout(() => { if (loaded < 4) { document.getElementById('loadingOverlay').style.display='none'; isOffline = true; updateOfflineBanner(); } }, 10000);
+  unsubscribers.push(onValue(ref(db,'.info/connected'), snap => { isOffline = snap.val() !== true; updateOfflineBanner(); }));
   unsubscribers.push(onValue(ref(db,'settings'), snap => { settings = { ...DEFAULT_SETTINGS, ...(snap.val()||{}) }; renderShiftOptions(); fillSettingsForm(); renderAll(); checkLoaded(); }, onDbError));
   unsubscribers.push(onValue(ref(db,'drivers'), snap => { drivers = snap.val()||{}; renderAllDrivers(); refreshSelects(); renderDashboard(); renderBulk(); checkLoaded(); }, onDbError));
   unsubscribers.push(onValue(ref(db,'attendance'), snap => { attendance = snap.val()||{}; renderAttendance(); renderDashboard(); renderBulk(); checkLoaded(); }, onDbError));
   unsubscribers.push(onValue(ref(db,'workOrders'), snap => { workOrders = snap.val()||{}; renderWorkOrders(); checkLoaded(); }, onDbError));
 }
-function stopListening() { unsubscribers.forEach(u => u()); unsubscribers = []; drivers = {}; attendance = {}; workOrders = {}; settings = { ...DEFAULT_SETTINGS }; }
+function stopListening() { clearTimeout(loadTimer); isOffline = false; updateOfflineBanner(); unsubscribers.forEach(u => u()); unsubscribers = []; drivers = {}; attendance = {}; workOrders = {}; settings = { ...DEFAULT_SETTINGS }; }
 function onDbError(err) {
   console.error(err);
   document.getElementById('loadingOverlay').style.display='none';
@@ -536,20 +634,23 @@ function migrateShiftCodes() {
 }
 
 // ===== LANG =====
-window.toggleLang = function() {
-  currentLang = currentLang === 'ar' ? 'en' : 'ar';
+function applyLang(lang) {
+  currentLang = lang;
+  try { localStorage.setItem('tb_lang', lang); } catch(_) {}
   const html = document.getElementById('htmlRoot');
-  html.setAttribute('lang', currentLang);
-  html.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
-  document.getElementById('langDot').textContent = currentLang === 'ar' ? 'ع' : 'EN';
-  document.getElementById('langLabel').textContent = currentLang === 'ar' ? 'AR' : 'EN';
-  document.querySelectorAll('[data-ar]').forEach(el => {
-    const val = currentLang === 'ar' ? el.getAttribute('data-ar') : el.getAttribute('data-en');
-    if (el.tagName === 'INPUT' || el.tagName === 'OPTION') el.textContent = val;
-    else if (el.tagName === 'BUTTON' || el.tagName === 'LABEL' || el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'H2') el.textContent = val;
-  });
-  renderAll();
+  html.setAttribute('lang', lang);
+  html.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.getElementById('langDot').textContent = lang === 'ar' ? 'ع' : 'EN';
+  document.getElementById('langLabel').textContent = lang === 'ar' ? 'AR' : 'EN';
+  document.querySelectorAll('[data-ar]').forEach(el => { if (el.tagName !== 'INPUT') el.textContent = el.getAttribute(lang === 'ar' ? 'data-ar' : 'data-en'); });
+  document.querySelectorAll('[data-ph-ar]').forEach(el => el.setAttribute('placeholder', el.getAttribute(lang === 'ar' ? 'data-ph-ar' : 'data-ph-en')));
+  document.getElementById('driverModalTitle').textContent = editingDriverId ? t('✏️ تعديل بيانات السائق','✏️ Edit Driver') : t('➕ إضافة سائق جديد','➕ Add New Driver');
+  document.getElementById('driverSaveBtn').textContent = editingDriverId ? t('حفظ التعديلات','Save Changes') : t('إضافة السائق','Add Driver');
+  if (editingAttendId) document.getElementById('attendSaveBtn').textContent = t('حفظ التعديل','Save changes');
+  updateOfflineBanner();
+  renderAll(); refreshSelects(); fillAttendDriverInfo();
 }
+window.toggleLang = function() { applyLang(currentLang === 'ar' ? 'en' : 'ar'); }
 
 function t(ar, en) { return currentLang === 'ar' ? ar : en; }
 
@@ -602,7 +703,7 @@ onAuthStateChanged(auth, async user => {
 });
 
 function startClock() {
-  function upd() { document.getElementById('clockDisplay').textContent = new Date().toLocaleTimeString('ar-EG',{timeZone:'Africa/Cairo',hour12:true}); }
+  function upd() { document.getElementById('clockDisplay').textContent = new Date().toLocaleTimeString(currentLang==='ar'?'ar-EG':'en-US',{timeZone:'Africa/Cairo',hour12:true}); }
   upd(); clockTimer = setInterval(upd,1000);
 }
 function setTodayDate() {
@@ -617,9 +718,9 @@ function setTodayDate() {
 // ===== NAV =====
 window.showPage = function(id, btn) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>{ b.classList.remove('active'); b.removeAttribute('aria-current'); });
   document.getElementById('page-'+id).classList.add('active');
-  btn.classList.add('active');
+  btn.classList.add('active'); btn.setAttribute('aria-current','page');
   if(id==='reports') renderReports();
   if(id==='drivers') renderAllDrivers();
 }
@@ -688,16 +789,16 @@ window.saveDriver = function() {
 
 window.editDriver = function(id) { openModal(id); }
 
-window.toggleDriverActive = function(id) {
+window.toggleDriverActive = async function(id) {
   const d = drivers[id]; if(!d) return;
   const next = isActive(d) ? 'inactive' : 'active';
-  if(next==='inactive' && !confirm(t('إيقاف السائق؟ سيختفي من قوائم التسجيل وتبقى سجلاته.','Deactivate this driver? They disappear from entry lists; records are kept.'))) return;
+  if(next==='inactive' && !(await askConfirm(t('إيقاف السائق؟ سيختفي من قوائم التسجيل وتبقى سجلاته.','Deactivate this driver? They disappear from entry lists; records are kept.')))) return;
   update(ref(db,'drivers/'+id), { status: next }).catch(e => { console.error(e); alert(t('تعذر الحفظ','Could not save')); });
 }
 
-window.deleteDriver = function(id) {
+window.deleteDriver = async function(id) {
   if(!isAdmin) return alert(t('المسح للمسؤول فقط','Only admins can delete'));
-  if(!confirm(t('تأكيد مسح السائق؟ (الأفضل إيقافه بدل المسح)','Delete this driver? (deactivating is usually better)'))) return;
+  if(!(await askConfirm(t('تأكيد مسح السائق؟ (الأفضل إيقافه بدل المسح)','Delete this driver? (deactivating is usually better)')))) return;
   remove(ref(db,'drivers/'+id)).catch(e => { console.error(e); alert(t('تعذر المسح','Could not delete')); });
 }
 
@@ -785,7 +886,7 @@ let selectedShift = '', selectedStatus = 'present', editingAttendId = null;
 function renderStatusOptions() {
   const icon = { present:'✅', off:'🏖', sick:'🤒' };
   document.getElementById('statusOptions').innerHTML = Object.keys(STATUSES).map(k =>
-    `<div class="shift-opt${selectedStatus===k?' selected':''}" onclick="selectStatus('${k}')">${icon[k]} ${statusLabel(k)}</div>`).join('');
+    `<button type="button" class="shift-opt${selectedStatus===k?' selected':''}" aria-pressed="${selectedStatus===k}" onclick="selectStatus('${k}')">${icon[k]} ${statusLabel(k)}</button>`).join('');
   document.getElementById('shiftGroup').style.display = selectedStatus==='present' ? '' : 'none';
   renderShiftOptions();
 }
@@ -793,8 +894,8 @@ function renderStatusOptions() {
 function renderShiftOptions() {
   const icon = { half:'🌤', normal:'☀️', extra:'🌙' };
   document.getElementById('shiftOptions').innerHTML =
-    ['half','normal','extra'].map(c => `<div class="shift-opt${selectedShift===c?' selected':''}" onclick="selectShift('${c}')">${icon[c]} ${shiftLabel(c)} ${formatTime(shiftEnd(c))}</div>`).join('') +
-    `<div class="shift-opt${selectedShift==='custom'?' selected':''}" onclick="selectShift('custom')">⏰ ${t('وقت تاني','Custom Time')}</div>`;
+    ['half','normal','extra'].map(c => `<button type="button" class="shift-opt${selectedShift===c?' selected':''}" aria-pressed="${selectedShift===c}" onclick="selectShift('${c}')">${icon[c]} ${shiftLabel(c)} ${formatTime(shiftEnd(c))}</button>`).join('') +
+    `<button type="button" class="shift-opt${selectedShift==='custom'?' selected':''}" aria-pressed="${selectedShift==='custom'}" onclick="selectShift('custom')">⏰ ${t('وقت تاني','Custom Time')}</button>`;
   document.getElementById('customTimeRow').style.display = (selectedShift==='custom' && selectedStatus==='present') ? 'block' : 'none';
 }
 
@@ -872,7 +973,7 @@ window.editAttendance = function(id) {
 }
 window.cancelEditAttendance = function() { resetAttendForm(); }
 
-window.saveAttendance = function() {
+window.saveAttendance = async function() {
   const driverId = document.getElementById('attendDriver').value;
   const date = document.getElementById('attendDate').value;
   const route = document.getElementById('attendRoute').value.trim();
@@ -894,7 +995,7 @@ window.saveAttendance = function() {
   let targetId = editingAttendId;
   if(dup) {
     if(editingAttendId) return alert(t('السائق مسجل بالفعل في هذا اليوم','This driver already has a record on that date'));
-    if(!confirm(t('السائق مسجل بالفعل في هذا اليوم. تستبدل السجل؟','This driver already has a record for this date. Replace it?'))) return;
+    if(!(await askConfirm(t('السائق مسجل بالفعل في هذا اليوم. تستبدل السجل؟','This driver already has a record for this date. Replace it?')))) return;
     targetId = dup[0];
   }
   const me = auth.currentUser?.uid || '';
@@ -910,9 +1011,9 @@ window.saveAttendance = function() {
     shiftType: selectedStatus==='present' ? shiftLabel(shiftType) : statusLabel(selectedStatus), route, note });
 }
 
-window.deleteAttend = function(id) {
+window.deleteAttend = async function(id) {
   if(!isAdmin) return alert(t('المسح للمسؤول فقط','Only admins can delete'));
-  if(!confirm(t('تأكيد مسح السجل؟','Delete this record?'))) return;
+  if(!(await askConfirm(t('تأكيد مسح السجل؟','Delete this record?')))) return;
   remove(ref(db,'attendance/'+id)).catch(e => { console.error(e); alert(t('تعذر المسح','Could not delete')); });
 }
 
@@ -967,8 +1068,8 @@ function renderBulk() {
     ${list.map(([id,d]) => done.has(id)
       ? `<tr style="opacity:0.6"><td><b>${esc(d.name)}</b></td><td colspan="2"><span class="badge badge-green">${t('مسجل بالفعل','Already recorded')}</span></td></tr>`
       : `<tr><td><b>${esc(d.name)}</b></td>
-          <td><select onchange="bulkSet('${esc(id)}','choice',this.value)">${opts(bulkState[id]?.choice)}</select></td>
-          <td><input type="text" maxlength="200" value="${esc(bulkState[id]?.route||'')}" oninput="bulkSet('${esc(id)}','route',this.value)" style="width:100%;min-width:160px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:inherit"/></td></tr>`
+          <td><select aria-label="${esc(d.name)}" onchange="bulkSet('${esc(id)}','choice',this.value)">${opts(bulkState[id]?.choice)}</select></td>
+          <td><input type="text" aria-label="${esc(d.name)} — ${t('المسار','Route')}" maxlength="200" value="${esc(bulkState[id]?.route||'')}" oninput="bulkSet('${esc(id)}','route',this.value)" style="width:100%;min-width:160px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:inherit"/></td></tr>`
     ).join('')}</tbody></table>`;
   updateBulkBtn();
 }
@@ -1247,7 +1348,7 @@ function renderDashboardExtras() {
 // ===== HELPERS =====
 function shiftBadge(s){ return {half:'badge-amber',normal:'badge-blue',extra:'badge-red',custom:'badge-green',none:'badge-blue'}[shiftCode(s)]; }
 function formatDate(d){ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
-function formatTime(t){ if(!t) return '—'; const [h,m]=t.split(':'); const hr=parseInt(h); return `${hr>12?hr-12:hr===0?12:hr}:${m} ${hr>=12?'م':'ص'}`; }
+function formatTime(v){ if(!v) return '—'; const [h,m]=v.split(':'); const hr=parseInt(h); return `${hr>12?hr-12:hr===0?12:hr}:${m} ${hr>=12?t('م','PM'):t('ص','AM')}`; }
 
 // ===== WORK ORDERS (photo of handwritten sheet -> AI reads it) =====
 let woImage = null; // base64 JPEG (no prefix)
@@ -1353,9 +1454,9 @@ window.woSave = async function() {
   } finally { btn.disabled = false; }
 }
 
-window.deleteWorkOrder = function(id) {
+window.deleteWorkOrder = async function(id) {
   if(!isAdmin) return alert(t('المسح للمسؤول فقط','Only admins can delete'));
-  if(!confirm(t('تأكيد مسح السجل؟ (الصف في الشيت والصورة يفضلوا زي ما هم)','Delete this record? (the sheet row and photo are kept)'))) return;
+  if(!(await askConfirm(t('تأكيد مسح السجل؟ (الصف في الشيت والصورة يفضلوا زي ما هم)','Delete this record? (the sheet row and photo are kept)')))) return;
   remove(ref(db,'workOrders/'+id)).catch(e => { console.error(e); alert(t('تعذر المسح','Could not delete')); });
 }
 
@@ -1377,6 +1478,14 @@ function renderWorkOrders() {
     <td>${isAdmin?`<button class="btn btn-danger" onclick="deleteWorkOrder('${esc(id)}')">${t('مسح','Del')}</button>`:''}</td>
   </tr>`).join('')}</tbody></table>`;
 }
+
+// Associate every form label with its control (screen readers / tap-to-focus)
+document.querySelectorAll('.form-group').forEach(g => {
+  const l = g.querySelector(':scope > label'), c = g.querySelector('input,select,textarea');
+  if (l && c && c.id && !l.htmlFor) l.htmlFor = c.id;
+});
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (savedLang === 'en') applyLang('en');
 
 function renderAll(){ renderDashboard(); renderAttendance(); renderAllDrivers(); renderWorkOrders(); renderStatusOptions(); renderBulk(); }
 </script>

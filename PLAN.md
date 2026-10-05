@@ -75,12 +75,12 @@ Today it is a single `index.html` (Arabic/English, RTL/LTR) backed by Firebase R
 - [ ] Make Google Sheets sync reliable — deferred: needs the merged Apps Script to return JSON so failures can be detected (see apps-script/Code.gs).
 
 ### Phase 4 — UX and quality (1 week)
-- [ ] Mobile-first pass: bigger tap targets, sticky save button, bottom nav.
-- [ ] Complete i18n: move strings into one `i18n` dictionary; fix mixed-language leftovers; persist language choice.
-- [ ] Loading, empty and error states; offline indicator (RTDB supports offline cache).
-- [ ] Replace `alert`/`prompt` with in-app dialogs.
-- [ ] Accessibility: labels, focus states, contrast check, keyboard navigation.
-- [ ] Installable **PWA** (manifest + service worker) so drivers' supervisors can add it to the home screen.
+- [x] Mobile-first pass: bigger tap targets, sticky save button, bottom nav.
+- [x] i18n: language choice persisted, AM/PM, clock and placeholders localised, mixed-language leftovers fixed. (Kept inline `t(ar,en)` pairs instead of a central dictionary: both languages stay side by side.)
+- [x] Loading, empty and error states; offline indicator (RTDB supports offline cache).
+- [x] Replace `alert`/`prompt` with in-app dialogs.
+- [x] Accessibility: labels, focus states, contrast check, keyboard navigation.
+- [x] Installable **PWA** (manifest + service worker) so drivers' supervisors can add it to the home screen.
 
 ### Phase 5 — Engineering foundation (parallel, ongoing)
 - [ ] Split into `index.html`, `styles.css`, `js/` modules (`firebase.js`, `i18n.js`, `drivers.js`, `attendance.js`, `reports.js`, `utils.js`).
