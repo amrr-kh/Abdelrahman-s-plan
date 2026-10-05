@@ -46,12 +46,34 @@
       <div class="form-group"><label data-ar="اسم السائق" data-en="Driver Name">اسم السائق</label><input type="text" id="driverName" maxlength="100"/></div>
       <div class="form-group"><label data-ar="رقم التليفون المصري" data-en="Egyptian Phone Number">رقم التليفون المصري</label><input type="text" id="driverPhone" placeholder="01xxxxxxxxx" maxlength="11" inputmode="numeric" dir="ltr"/></div>
       <div class="form-group"><label data-ar="رقم الرخصة" data-en="License Number">رقم الرخصة</label><input type="text" id="driverLicense" maxlength="50"/></div>
+      <div class="form-group"><label data-ar="تاريخ انتهاء الرخصة" data-en="Licence expiry date">تاريخ انتهاء الرخصة</label><input type="date" id="driverLicenseExpiry"/></div>
       <div class="form-group"><label data-ar="رقم لوحة العربية (مصري)" data-en="Egyptian Plate Number">رقم لوحة العربية (مصري)</label><input type="text" id="driverPlate" placeholder="أ ب ج ١٢٣٤" data-ph-ar="أ ب ج ١٢٣٤" data-ph-en="ABC 1234"/></div>
       <div class="form-group"><label data-ar="رقم / علامة الباص" data-en="Bus Number / Sign">رقم / علامة الباص</label><input type="text" id="driverBusSign" placeholder="مثال: B12" data-ph-ar="مثال: B12" data-ph-en="e.g. B12"/></div>
 
     </div>
     <br/>
     <button class="btn btn-primary" id="driverSaveBtn" onclick="saveDriver()" style="width:100%">إضافة السائق</button>
+  </div>
+</div>
+
+<!-- VEHICLE MODAL -->
+<div class="modal-overlay" id="vehicleModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="vehicleModalTitle">
+    <div class="modal-title">
+      <span id="vehicleModalTitle">➕ إضافة باص</span>
+      <button class="modal-close" onclick="closeVehicleModal()" aria-label="Close">×</button>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group"><label data-ar="رقم اللوحة" data-en="Plate number">رقم اللوحة</label><input type="text" id="veh_plate" maxlength="30"/></div>
+      <div class="form-group"><label data-ar="رقم / علامة الباص" data-en="Bus number / sign">رقم / علامة الباص</label><input type="text" id="veh_busSign" maxlength="30"/></div>
+      <div class="form-group"><label data-ar="الموديل" data-en="Model">الموديل</label><input type="text" id="veh_model" maxlength="60"/></div>
+      <div class="form-group"><label data-ar="انتهاء التأمين" data-en="Insurance expiry">انتهاء التأمين</label><input type="date" id="veh_insuranceExpiry"/></div>
+      <div class="form-group"><label data-ar="انتهاء رخصة الباص" data-en="Vehicle licence expiry">انتهاء رخصة الباص</label><input type="date" id="veh_licenseExpiry"/></div>
+      <div class="form-group"><label data-ar="موعد الصيانة القادمة" data-en="Next maintenance">موعد الصيانة القادمة</label><input type="date" id="veh_nextMaintenance"/></div>
+      <div class="form-group"><label data-ar="ملاحظات" data-en="Notes">ملاحظات</label><input type="text" id="veh_notes" maxlength="200"/></div>
+    </div>
+    <br/>
+    <button class="btn btn-primary" id="vehicleSaveBtn" onclick="saveVehicle()" style="width:100%">إضافة الباص</button>
   </div>
 </div>
 
@@ -83,6 +105,7 @@
     <button class="nav-btn" onclick="showPage('drivers',this)"><span class="nav-ico" aria-hidden="true">👤</span><span data-ar="السائقين" data-en="Drivers">السائقين</span></button>
     <button class="nav-btn" onclick="showPage('attendance',this)"><span class="nav-ico" aria-hidden="true">📋</span><span data-ar="الحضور" data-en="Attendance">الحضور</span></button>
     <button class="nav-btn" onclick="showPage('workorders',this)"><span class="nav-ico" aria-hidden="true">📷</span><span data-ar="أوامر الشغل" data-en="Work Orders">أوامر الشغل</span></button>
+    <button class="nav-btn" onclick="showPage('vehicles',this)"><span class="nav-ico" aria-hidden="true">🚌</span><span data-ar="الباصات" data-en="Vehicles">الباصات</span></button>
     <button class="nav-btn" id="navSettings" style="display:none" onclick="showPage('settings',this)"><span class="nav-ico" aria-hidden="true">⚙️</span><span data-ar="الإعدادات" data-en="Settings">الإعدادات</span></button>
     <button class="nav-btn" onclick="showPage('reports',this)"><span class="nav-ico" aria-hidden="true">📈</span><span data-ar="التقارير" data-en="Reports">التقارير</span></button>
   </nav>
@@ -101,6 +124,10 @@
     <div class="card">
       <div class="card-title" data-ar="📋 سجل الحضور اليوم" data-en="📋 Today's Attendance">📋 سجل الحضور اليوم</div>
       <div class="table-wrap" id="todayTable"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" data-ar="⏰ أوراق منتهية / قاربت على الانتهاء" data-en="⏰ Expired or expiring soon (30 days)">⏰ أوراق منتهية / قاربت على الانتهاء</div>
+      <div id="expiringList"></div>
     </div>
     <div class="card">
       <div class="card-title" data-ar="📊 الحضور آخر ٧ أيام" data-en="📊 Attendance — last 7 days">📊 الحضور آخر ٧ أيام</div>
@@ -207,6 +234,15 @@
         <button class="btn btn-secondary" onclick="clearFilter()" data-ar="كل السجلات" data-en="All Records">كل السجلات</button>
       </div>
       <div class="table-wrap" id="attendanceTable"></div>
+    </div>
+  </div>
+
+  <!-- VEHICLES -->
+  <div class="page" id="page-vehicles">
+    <div class="card">
+      <div class="card-title" data-ar="🚌 الباصات والأوراق" data-en="🚌 Vehicles & Papers">🚌 الباصات والأوراق</div>
+      <button class="btn btn-primary" onclick="openVehicleModal()" data-ar="➕ إضافة باص" data-en="➕ Add Vehicle" style="margin-bottom:1rem">➕ إضافة باص</button>
+      <div class="table-wrap" id="vehiclesTable"></div>
     </div>
   </div>
 

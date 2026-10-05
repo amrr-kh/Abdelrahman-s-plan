@@ -106,3 +106,43 @@ test('summarizeReport totals per driver, uses current names, counts off/sick sep
   assert.equal(b.half, 1);
   assert.equal(b.days, 1);
 });
+
+import { daysUntil, expiryStatus, collectExpiries } from '../../js/utils.js';
+
+test('daysUntil counts whole days and handles bad input', () => {
+  assert.equal(daysUntil('2026-10-10', '2026-10-05'), 5);
+  assert.equal(daysUntil('2026-10-05', '2026-10-05'), 0);
+  assert.equal(daysUntil('2026-10-01', '2026-10-05'), -4);
+  assert.equal(daysUntil('2027-01-01', '2026-12-31'), 1);
+  assert.equal(daysUntil('', '2026-10-05'), null);
+  assert.equal(daysUntil('nonsense', '2026-10-05'), null);
+});
+
+test('expiryStatus thresholds', () => {
+  assert.equal(expiryStatus(null), 'none');
+  assert.equal(expiryStatus(-1), 'expired');
+  assert.equal(expiryStatus(0), 'soon');
+  assert.equal(expiryStatus(30), 'soon');
+  assert.equal(expiryStatus(31), 'ok');
+  assert.equal(expiryStatus(10, 7), 'ok');
+});
+
+test('collectExpiries lists expired/soon items, most urgent first, skipping inactive and far-off dates', () => {
+  const vehicles = {
+    v1: { plate: 'ABC 123', busSign: 'B1', insuranceExpiry: '2026-10-20', licenseExpiry: '2026-10-01', nextMaintenance: '2027-05-01' },
+    v2: { plate: 'XYZ 9', status: 'inactive', insuranceExpiry: '2026-09-01' }
+  };
+  const drivers = {
+    d1: { name: 'Ali', licenseExpiry: '2026-10-08' },
+    d2: { name: 'Old', status: 'inactive', licenseExpiry: '2026-09-01' },
+    d3: { name: 'Fine', licenseExpiry: '2027-12-01' },
+    d4: { name: 'No date' }
+  };
+  const items = collectExpiries(vehicles, drivers, '2026-10-05');
+  assert.deepEqual(items.map(i => [i.label, i.field, i.status]), [
+    ['B1 · ABC 123', 'licenseExpiry', 'expired'],
+    ['Ali', 'driverLicense', 'soon'],
+    ['B1 · ABC 123', 'insuranceExpiry', 'soon']
+  ]);
+  assert.equal(items[0].days, -4);
+});

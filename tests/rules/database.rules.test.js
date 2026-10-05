@@ -96,3 +96,21 @@ test('work orders: photoUrl must be https', async () => {
   await assertFails(set(ref(as('sup1'), 'workOrders/w2'), { ...wo, photoUrl: 'javascript:alert(1)' }));
   await assertFails(remove(ref(as('sup1'), 'workOrders/w1')));
 });
+
+test('vehicles: supervisor adds/edits, only admin deletes, dates validated', async () => {
+  const v = { plate: 'ABC 123', busSign: 'B1', insuranceExpiry: '2026-12-01', licenseExpiry: '', status: 'active', createdAt: 1 };
+  await assertSucceeds(set(ref(as('sup1'), 'vehicles/v1'), v));
+  await assertSucceeds(update(ref(as('sup1'), 'vehicles/v1'), { nextMaintenance: '2026-11-15' }));
+  await assertFails(set(ref(as('sup1'), 'vehicles/v2'), { ...v, insuranceExpiry: '1/12/2026' }));
+  await assertFails(set(ref(as('sup1'), 'vehicles/v3'), { busSign: 'no plate' }));
+  await assertFails(set(ref(as('sup1'), 'vehicles/v4'), { ...v, secret: 1 }));
+  await assertFails(get(ref(anon(), 'vehicles')));
+  await assertFails(remove(ref(as('sup1'), 'vehicles/v1')));
+  await assertSucceeds(remove(ref(as('admin1'), 'vehicles/v1')));
+});
+
+test('driver licenseExpiry must be a date or empty', async () => {
+  await assertSucceeds(update(ref(as('sup1'), 'drivers/d1'), { licenseExpiry: '2027-03-01' }));
+  await assertSucceeds(update(ref(as('sup1'), 'drivers/d1'), { licenseExpiry: '' }));
+  await assertFails(update(ref(as('sup1'), 'drivers/d1'), { licenseExpiry: 'soon' }));
+});

@@ -81,3 +81,39 @@ export function summarizeReport(records, nameOf, defaultStart) {
   });
   return Object.values(map).sort((a, b) => String(a.name).localeCompare(String(b.name)));
 }
+
+// ===== Expiry tracking (vehicle papers, maintenance, driver licences) =====
+export const VEHICLE_DATE_FIELDS = ['insuranceExpiry', 'licenseExpiry', 'nextMaintenance'];
+
+// Whole days from `today` to `dateStr` (both YYYY-MM-DD); negative = already past; null if no/invalid date
+export function daysUntil(dateStr, today) {
+  if (!dateStr) return null;
+  const a = Date.parse(dateStr + 'T00:00:00Z'), b = Date.parse(today + 'T00:00:00Z');
+  if (isNaN(a) || isNaN(b)) return null;
+  return Math.round((a - b) / 86400000);
+}
+
+export function expiryStatus(days, warnDays = 30) {
+  if (days === null) return 'none';
+  if (days < 0) return 'expired';
+  return days <= warnDays ? 'soon' : 'ok';
+}
+
+// Everything expired or expiring within warnDays, most urgent first. Inactive vehicles/drivers are ignored.
+export function collectExpiries(vehicles, drivers, today, warnDays = 30) {
+  const items = [];
+  const push = (kind, id, field, label, date) => {
+    const days = daysUntil(date, today), status = expiryStatus(days, warnDays);
+    if (status === 'expired' || status === 'soon') items.push({ kind, id, field, label, date, days, status });
+  };
+  Object.entries(vehicles || {}).forEach(([id, v]) => {
+    if (v.status === 'inactive') return;
+    const label = [v.busSign, v.plate].filter(Boolean).join(' · ');
+    VEHICLE_DATE_FIELDS.forEach(f => push('vehicle', id, f, label, v[f]));
+  });
+  Object.entries(drivers || {}).forEach(([id, d]) => {
+    if (d.status === 'inactive') return;
+    push('driver', id, 'driverLicense', d.name || '', d.licenseExpiry);
+  });
+  return items.sort((a, b) => a.days - b.days);
+}

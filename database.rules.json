@@ -35,6 +35,9 @@
         },
         "createdAt": {
           ".validate": "newData.isNumber()"
+        },
+        "licenseExpiry": {
+          ".validate": "newData.isString() && (newData.val() === \"\" || newData.val().matches(/^d{4}-d{2}-d{2}$/))"
         }
       }
     },
@@ -141,6 +144,43 @@
       },
       "$other": {
         ".validate": false
+      }
+    },
+    "vehicles": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'supervisor')",
+      "$id": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'supervisor' && newData.exists()))",
+        ".validate": "newData.hasChild('plate')",
+        "plate": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+        },
+        "busSign": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "model": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "insuranceExpiry": {
+          ".validate": "newData.isString() && (newData.val() === \"\" || newData.val().matches(/^d{4}-d{2}-d{2}$/))"
+        },
+        "licenseExpiry": {
+          ".validate": "newData.isString() && (newData.val() === \"\" || newData.val().matches(/^d{4}-d{2}-d{2}$/))"
+        },
+        "nextMaintenance": {
+          ".validate": "newData.isString() && (newData.val() === \"\" || newData.val().matches(/^d{4}-d{2}-d{2}$/))"
+        },
+        "notes": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === \"active\" || newData.val() === \"inactive\")"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }

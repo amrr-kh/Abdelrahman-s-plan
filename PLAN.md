@@ -90,8 +90,8 @@ Today it is a single `index.html` (Arabic/English, RTL/LTR) backed by Firebase R
 - [x] Automated daily database backup (Apps Script, into your Drive). Needs the one-time trigger setup in the README.
 
 ### Phase 6 — Future ideas (backlog)
-- Vehicle records: insurance, license expiry, maintenance reminders.
-- Driver license expiry alerts.
+- [x] Vehicle records: insurance, licence expiry, next maintenance (Vehicles tab) with colour-coded badges.
+- [x] Driver licence expiry alerts (licence expiry date on the driver; dashboard card lists anything expired or due within 30 days).
 - Trip/program assignment linked to bookings.
 - WhatsApp daily summary to the manager.
 - Multi-branch / multi-company support.

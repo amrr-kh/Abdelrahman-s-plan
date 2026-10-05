@@ -85,3 +85,6 @@ Then redeploy the script as a new version. Optionally rotate the deployment URL 
 ## Phase 2 additions
 Republish `database.rules.json` (new fields: driver `status`/`createdAt`, attendance `status`/`createdBy`/`updatedBy`/`updatedAt`, and an admin-only `settings` node).
 Defaults need no setup; the admin can change shift end times and the default start time in the new **Settings** tab.
+
+## Phase 6 additions
+Republish `database.rules.json` again: it now has a `vehicles` node and a driver `licenseExpiry` field. No other setup needed.

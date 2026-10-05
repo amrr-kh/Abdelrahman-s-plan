@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { daysUntil, expiryStatus, collectExpiries } from "./utils.js";
 import { SHIFTS, STATUSES, statusOf, normDigits, shiftCode, esc, normName, addDays, weekStart, monthRange, fmtHours, csvCell, formatDate, isEgyptianMobile, formatTime12, hoursOfRecord, summarizeReport } from "./utils.js";
 
 const firebaseConfig = {
@@ -16,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-let drivers = {}, attendance = {}, workOrders = {};
+let drivers = {}, attendance = {}, workOrders = {}, vehicles = {};
 const DEFAULT_SETTINGS = { startTime:'07:30', halfEnd:'12:30', normalEnd:'14:00', extraEnd:'21:00' };
 let settings = { ...DEFAULT_SETTINGS };
 let loaded = 0;
@@ -77,10 +78,14 @@ document.getElementById('dialogCancel').addEventListener('click', () => closeDia
 
 // Escape closes the top-most dialog/modal; Tab stays inside it
 document.addEventListener('keydown', e => {
-  const dlg = document.getElementById('dialogOverlay'), modal = document.getElementById('addDriverModal');
-  const box = dlg.classList.contains('open') ? dlg : modal.classList.contains('open') ? modal : null;
+  const dlg = document.getElementById('dialogOverlay'), modal = document.querySelector('.modal-overlay.open');
+  const box = dlg.classList.contains('open') ? dlg : modal;
   if (!box) return;
-  if (e.key === 'Escape') { e.preventDefault(); if (box === dlg) closeDialog(false); else window.closeModal(); return; }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (box === dlg) closeDialog(false); else if (box.id === 'vehicleModal') window.closeVehicleModal(); else window.closeModal();
+    return;
+  }
   if (e.key === 'Tab') {
     const f = [...box.querySelectorAll('button,input,select,textarea,[href]')].filter(x => !x.disabled && x.offsetParent !== null);
     if (!f.length) return;
@@ -99,19 +104,20 @@ function updateOfflineBanner() {
 window.addEventListener('offline', () => { isOffline = true; updateOfflineBanner(); });
 window.addEventListener('online', () => { isOffline = false; updateOfflineBanner(); });
 
-function checkLoaded() { loaded++; if (loaded >= 4) { clearTimeout(loadTimer); document.getElementById('loadingOverlay').style.display='none'; migrateShiftCodes(); } }
+function checkLoaded() { loaded++; if (loaded >= 5) { clearTimeout(loadTimer); document.getElementById('loadingOverlay').style.display='none'; migrateShiftCodes(); } }
 
 function startListening() {
   loaded = 0;
   clearTimeout(loadTimer);
-  loadTimer = setTimeout(() => { if (loaded < 4) { document.getElementById('loadingOverlay').style.display='none'; isOffline = true; updateOfflineBanner(); } }, 10000);
+  loadTimer = setTimeout(() => { if (loaded < 5) { document.getElementById('loadingOverlay').style.display='none'; isOffline = true; updateOfflineBanner(); } }, 10000);
   unsubscribers.push(onValue(ref(db,'.info/connected'), snap => { isOffline = snap.val() !== true; updateOfflineBanner(); }));
   unsubscribers.push(onValue(ref(db,'settings'), snap => { settings = { ...DEFAULT_SETTINGS, ...(snap.val()||{}) }; renderShiftOptions(); fillSettingsForm(); renderAll(); checkLoaded(); }, onDbError));
   unsubscribers.push(onValue(ref(db,'drivers'), snap => { drivers = snap.val()||{}; renderAllDrivers(); refreshSelects(); renderDashboard(); renderBulk(); checkLoaded(); }, onDbError));
   unsubscribers.push(onValue(ref(db,'attendance'), snap => { attendance = snap.val()||{}; renderAttendance(); renderDashboard(); renderBulk(); checkLoaded(); }, onDbError));
   unsubscribers.push(onValue(ref(db,'workOrders'), snap => { workOrders = snap.val()||{}; renderWorkOrders(); checkLoaded(); }, onDbError));
+  unsubscribers.push(onValue(ref(db,'vehicles'), snap => { vehicles = snap.val()||{}; renderVehicles(); renderExpiring(); checkLoaded(); }, onDbError));
 }
-function stopListening() { clearTimeout(loadTimer); isOffline = false; updateOfflineBanner(); unsubscribers.forEach(u => u()); unsubscribers = []; drivers = {}; attendance = {}; workOrders = {}; settings = { ...DEFAULT_SETTINGS }; }
+function stopListening() { clearTimeout(loadTimer); isOffline = false; updateOfflineBanner(); unsubscribers.forEach(u => u()); unsubscribers = []; drivers = {}; attendance = {}; workOrders = {}; vehicles = {}; settings = { ...DEFAULT_SETTINGS }; }
 function onDbError(err) {
   console.error(err);
   document.getElementById('loadingOverlay').style.display='none';
@@ -238,6 +244,7 @@ window.openModal = function(id) {
   document.getElementById('driverName').value = d.name || '';
   document.getElementById('driverPhone').value = d.phone || '';
   document.getElementById('driverLicense').value = d.license || '';
+  document.getElementById('driverLicenseExpiry').value = d.licenseExpiry || '';
   document.getElementById('driverPlate').value = d.plate || '';
   document.getElementById('driverBusSign').value = d.busSign || '';
   document.getElementById('driverModalTitle').textContent = editingDriverId ? t('✏️ تعديل بيانات السائق','✏️ Edit Driver') : t('➕ إضافة سائق جديد','➕ Add New Driver');
@@ -273,6 +280,7 @@ window.saveDriver = async function() {
   const name = document.getElementById('driverName').value.trim();
   const phone = normDigits(document.getElementById('driverPhone').value).replace(/[\s-]/g,'');
   const license = document.getElementById('driverLicense').value.trim();
+  const licenseExpiry = document.getElementById('driverLicenseExpiry').value;
   const plate = document.getElementById('driverPlate').value.trim();
   const busSign = document.getElementById('driverBusSign').value.trim();
   if(!name) return alert(t('اكتب اسم السائق','Enter driver name'));
@@ -280,7 +288,7 @@ window.saveDriver = async function() {
   if(name.length > 100 || license.length > 50 || plate.length > 30 || busSign.length > 30) return alert(t('البيانات طويلة جداً','Input too long'));
   const sameName = Object.entries(drivers).some(([id,d]) => id !== editingDriverId && normName(d.name) === normName(name));
   if(sameName && !(await askConfirm(t('يوجد سائق بنفس الاسم. تكمل؟','A driver with this name already exists. Continue?')))) return;
-  const fields = { name, phone, plate, busSign, license };
+  const fields = { name, phone, plate, busSign, license, licenseExpiry };
   if(editingDriverId) {
     update(ref(db,'drivers/'+editingDriverId), fields)
       .then(() => toast(t('تم حفظ التعديلات ✓','Changes saved ✓')))
@@ -367,6 +375,7 @@ window.loadDriverProfile = function() {
       <div class="dp-item">${t('اللوحة','Plate')}<b>${esc(d.plate)||'—'}</b></div>
       <div class="dp-item">${t('الباص','Bus Sign')}<b>${esc(d.busSign)||'—'}</b></div>
       <div class="dp-item">${t('الرخصة','License')}<b>${esc(d.license)||'—'}</b></div>
+      <div class="dp-item">${t('انتهاء الرخصة','Licence expiry')}<b>${d.licenseExpiry ? esc(formatDate(d.licenseExpiry)) : '—'}</b></div>
     </div>
   </div>`;
   // Attendance for this driver
@@ -654,6 +663,7 @@ window.saveSettings = function() {
 // ===== DASHBOARD =====
 function renderDashboard() {
   renderDashboardExtras();
+  renderExpiring();
   const today = new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Cairo'});
   const todayA = Object.values(attendance).filter(a=>a.date===today);
   const presentA = todayA.filter(a=>statusOf(a)==='present');
@@ -959,4 +969,99 @@ document.querySelectorAll('.form-group').forEach(g => {
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 if (savedLang === 'en') applyLang('en');
 
-function renderAll(){ renderDashboard(); renderAttendance(); renderAllDrivers(); renderWorkOrders(); renderStatusOptions(); renderBulk(); }
+// ===== VEHICLES + EXPIRY ALERTS =====
+const EXPIRY_LABELS = {
+  insuranceExpiry: { ar:'تأمين الباص', en:'Insurance' },
+  licenseExpiry: { ar:'رخصة الباص', en:'Vehicle licence' },
+  nextMaintenance: { ar:'الصيانة القادمة', en:'Next maintenance' },
+  driverLicense: { ar:'رخصة السائق', en:'Driver licence' }
+};
+
+function expiryBadge(dateStr) {
+  const days = daysUntil(dateStr, todayStr());
+  const st = expiryStatus(days);
+  if (st === 'none') return '—';
+  const cls = st === 'expired' ? 'badge-red' : st === 'soon' ? 'badge-amber' : 'badge-green';
+  const note = st === 'expired' ? t(`منتهي منذ ${-days} يوم`, `Expired ${-days}d ago`)
+    : days === 0 ? t('ينتهي اليوم', 'Due today') : t(`بعد ${days} يوم`, `In ${days}d`);
+  return `<span class="badge ${cls}">${esc(formatDate(dateStr))}</span><div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${note}</div>`;
+}
+
+let editingVehicleId = null;
+
+window.openVehicleModal = function(id) {
+  editingVehicleId = (typeof id === 'string' && vehicles[id]) ? id : null;
+  const v = editingVehicleId ? vehicles[editingVehicleId] : {};
+  ['plate','busSign','model','insuranceExpiry','licenseExpiry','nextMaintenance','notes'].forEach(k => {
+    document.getElementById('veh_' + k).value = v[k] || '';
+  });
+  document.getElementById('vehicleModalTitle').textContent = editingVehicleId ? t('✏️ تعديل باص', '✏️ Edit Vehicle') : t('➕ إضافة باص', '➕ Add Vehicle');
+  document.getElementById('vehicleSaveBtn').textContent = editingVehicleId ? t('حفظ التعديلات', 'Save Changes') : t('إضافة الباص', 'Add Vehicle');
+  document.getElementById('vehicleModal').classList.add('open');
+}
+window.closeVehicleModal = function() { document.getElementById('vehicleModal').classList.remove('open'); editingVehicleId = null; }
+
+window.saveVehicle = function() {
+  const f = {};
+  ['plate','busSign','model','insuranceExpiry','licenseExpiry','nextMaintenance','notes'].forEach(k => { f[k] = document.getElementById('veh_' + k).value.trim(); });
+  if (!f.plate) return alert(t('اكتب رقم اللوحة', 'Enter the plate number'));
+  if (f.plate.length > 30 || f.busSign.length > 30 || f.model.length > 60 || f.notes.length > 200) return alert(t('البيانات طويلة جداً', 'Input too long'));
+  const badDate = ['insuranceExpiry','licenseExpiry','nextMaintenance'].some(k => f[k] && !/^\d{4}-\d{2}-\d{2}$/.test(f[k]));
+  if (badDate) return alert(t('تاريخ غير صحيح', 'Invalid date'));
+  const samePlate = Object.entries(vehicles).some(([id,v]) => id !== editingVehicleId && normName(v.plate) === normName(f.plate));
+  if (samePlate) return alert(t('اللوحة مسجلة بالفعل', 'This plate is already registered'));
+  const op = editingVehicleId
+    ? update(ref(db, 'vehicles/' + editingVehicleId), f)
+    : push(ref(db, 'vehicles'), { ...f, status:'active', createdAt: Date.now() });
+  op.then(() => toast(t('تم الحفظ ✓', 'Saved ✓'))).catch(e => { console.error(e); alert(t('تعذر الحفظ', 'Could not save')); });
+  window.closeVehicleModal();
+}
+
+window.toggleVehicleActive = async function(id) {
+  const v = vehicles[id]; if (!v) return;
+  const next = v.status === 'inactive' ? 'active' : 'inactive';
+  if (next === 'inactive' && !(await askConfirm(t('إيقاف الباص؟ سيختفي من التنبيهات.', 'Deactivate this vehicle? It stops appearing in alerts.')))) return;
+  update(ref(db, 'vehicles/' + id), { status: next }).catch(e => { console.error(e); alert(t('تعذر الحفظ', 'Could not save')); });
+}
+
+window.deleteVehicle = async function(id) {
+  if (!isAdmin) return alert(t('المسح للمسؤول فقط', 'Only admins can delete'));
+  if (!(await askConfirm(t('تأكيد مسح الباص؟', 'Delete this vehicle?')))) return;
+  remove(ref(db, 'vehicles/' + id)).catch(e => { console.error(e); alert(t('تعذر المسح', 'Could not delete')); });
+}
+
+function renderVehicles() {
+  const el = document.getElementById('vehiclesTable');
+  if (!el) return;
+  const list = Object.entries(vehicles).sort((a,b) => String(a[1].plate).localeCompare(String(b[1].plate)));
+  if (!list.length) { el.innerHTML = `<div class="empty-state">${t('لا يوجد باصات', 'No vehicles yet')}</div>`; return; }
+  el.innerHTML = `<table><thead><tr>
+    <th>${t('اللوحة','Plate')}</th><th>${t('الباص','Bus')}</th><th>${t('الموديل','Model')}</th>
+    <th>${EXPIRY_LABELS.insuranceExpiry[currentLang]}</th><th>${EXPIRY_LABELS.licenseExpiry[currentLang]}</th><th>${EXPIRY_LABELS.nextMaintenance[currentLang]}</th>
+    <th>${t('الحالة','Status')}</th><th></th>
+  </tr></thead><tbody>
+  ${list.map(([id,v]) => `<tr${v.status==='inactive'?' style="opacity:0.55"':''}>
+    <td><span class="badge badge-orange">${esc(v.plate)}</span></td><td>${esc(v.busSign)||'—'}</td><td>${esc(v.model)||'—'}</td>
+    <td>${expiryBadge(v.insuranceExpiry)}</td><td>${expiryBadge(v.licenseExpiry)}</td><td>${expiryBadge(v.nextMaintenance)}</td>
+    <td><span class="badge ${v.status==='inactive'?'badge-amber':'badge-green'}">${v.status==='inactive'?t('موقوف','Inactive'):t('نشط','Active')}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem" onclick="openVehicleModal('${esc(id)}')">${t('تعديل','Edit')}</button>
+      <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem" onclick="toggleVehicleActive('${esc(id)}')">${v.status==='inactive'?t('تفعيل','Activate'):t('إيقاف','Deactivate')}</button>
+      ${isAdmin?`<button class="btn btn-danger" onclick="deleteVehicle('${esc(id)}')">${t('مسح','Delete')}</button>`:''}
+    </td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+// Dashboard card: everything expired or due within 30 days
+function renderExpiring() {
+  const el = document.getElementById('expiringList');
+  if (!el) return;
+  const items = collectExpiries(vehicles, drivers, todayStr());
+  el.innerHTML = items.length
+    ? `<table><tbody>${items.map(i => `<tr>
+        <td><b>${esc(i.label)}</b><div style="font-size:0.78rem;color:var(--muted)">${i.kind==='driver'?'👤 ':'🚌 '}${EXPIRY_LABELS[i.field][currentLang]}</div></td>
+        <td style="text-align:end">${expiryBadge(i.date)}</td></tr>`).join('')}</tbody></table>`
+    : `<div class="empty-state" style="padding:1rem">${t('لا توجد أوراق منتهية أو قاربت على الانتهاء ✓', 'Nothing expired or expiring in the next 30 days ✓')}</div>`;
+}
+
+function renderAll(){ renderDashboard(); renderAttendance(); renderAllDrivers(); renderWorkOrders(); renderVehicles(); renderStatusOptions(); renderBulk(); }
