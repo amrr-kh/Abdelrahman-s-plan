@@ -1,7 +1,7 @@
 // Travel Band service worker: lets the app shell open offline.
 // Data is never cached here — Firebase and Apps Script requests go straight to the network.
-const CACHE = 'travelband-shell-v1';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+const CACHE = 'travelband-shell-v2';
+const SHELL = ['./', 'index.html', 'styles.css', 'js/app.js', 'js/utils.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 const LIBS = ['www.gstatic.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {

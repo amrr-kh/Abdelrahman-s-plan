@@ -180,3 +180,28 @@ function prop_(k) {
   return v;
 }
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+
+// ---------- daily backup (runs inside your own Google account; nothing leaves it) ----------
+var BACKUP_FOLDER = 'Travel Band Backups';
+var BACKUP_KEEP = 30;
+
+/** Run once from the editor to schedule the nightly backup (~03:00). */
+function installBackupTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'dailyBackup') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('dailyBackup').timeBased().everyDays(1).atHour(3).create();
+}
+
+/** Exports the whole Realtime Database as JSON into Drive and keeps the last BACKUP_KEEP files. */
+function dailyBackup() {
+  // The script owner's Google account must have access to the Firebase project.
+  var url = prop_('FIREBASE_DB_URL') + '/.json?access_token=' + encodeURIComponent(ScriptApp.getOAuthToken());
+  var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200) throw new Error('Backup failed: HTTP ' + res.getResponseCode());
+  var folder = folder_(DriveApp.getRootFolder(), BACKUP_FOLDER);
+  var stamp = Utilities.formatDate(new Date(), 'Africa/Cairo', 'yyyy-MM-dd_HHmm');
+  folder.createFile('travelband-backup-' + stamp + '.json', res.getContentText(), 'application/json');
+  var files = [], it = folder.getFiles();
+  while (it.hasNext()) files.push(it.next());
+  files.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
+  files.slice(BACKUP_KEEP).forEach(function (f) { f.setTrashed(true); });
+}

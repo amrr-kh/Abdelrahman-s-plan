@@ -1,0 +1,25 @@
+{
+  "name": "travel-band",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Driver attendance and work orders for Travel Band",
+  "scripts": {
+    "start": "npx serve .",
+    "lint": "eslint .",
+    "format": "prettier --check \"js/**/*.js\" \"tests/**/*.js\" \"*.json\" \"*.md\"",
+    "format:write": "prettier --write \"js/**/*.js\" \"tests/**/*.js\"",
+    "test": "node --test \"tests/unit/*.test.js\"",
+    "test:rules": "firebase emulators:exec --only database --project demo-travelband \"node --test tests/rules/*.test.js\"",
+    "check": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@firebase/rules-unit-testing": "^3.0.0",
+    "eslint": "^9.0.0",
+    "firebase": "^10.12.0",
+    "firebase-tools": "^13.0.0",
+    "globals": "^15.0.0",
+    "prettier": "^3.3.0"
+  }
+}

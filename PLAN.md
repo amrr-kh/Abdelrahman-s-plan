@@ -83,11 +83,11 @@ Today it is a single `index.html` (Arabic/English, RTL/LTR) backed by Firebase R
 - [x] Installable **PWA** (manifest + service worker) so drivers' supervisors can add it to the home screen.
 
 ### Phase 5 — Engineering foundation (parallel, ongoing)
-- [ ] Split into `index.html`, `styles.css`, `js/` modules (`firebase.js`, `i18n.js`, `drivers.js`, `attendance.js`, `reports.js`, `utils.js`).
-- [ ] Optional: move to Vite for dev server and build; keep it dependency-light.
-- [ ] Unit tests for helpers (date/time formatting, shift mapping, report aggregation) and Firebase emulator tests for Security Rules.
-- [ ] GitHub Actions: lint (ESLint + Prettier) and rules tests on every PR.
-- [ ] Automated daily database backup export (Cloud Scheduler or scripted).
+- [x] Split into `index.html`, `styles.css`, `js/app.js` and `js/utils.js` (pure helpers). Further per-feature modules (drivers, attendance, reports) are still to do: they share state, so they need a small store first.
+- [ ] Optional: Vite — skipped on purpose; there is no build step and none is needed yet.
+- [x] Unit tests for helpers (12 passing) and Security Rules tests (written; they run in CI because they need Java for the emulator).
+- [x] GitHub Actions: lint (ESLint) and tests on every PR. Prettier is configured but not enforced in CI yet.
+- [x] Automated daily database backup (Apps Script, into your Drive). Needs the one-time trigger setup in the README.
 
 ### Phase 6 — Future ideas (backlog)
 - Vehicle records: insurance, license expiry, maintenance reminders.

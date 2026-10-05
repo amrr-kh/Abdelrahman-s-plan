@@ -19,9 +19,14 @@ A web app for a tourism transport company in Cairo. Staff log in, record each dr
 | AI | Anthropic Claude vision, called from Apps Script (the key never reaches the browser) |
 
 ```
-index.html            the whole app
+index.html            page markup
+styles.css            styles
+js/app.js             app logic (Firebase, rendering, forms)
+js/utils.js           pure helpers (unit-tested)
+sw.js, manifest.webmanifest, icons/   installable app (PWA)
 database.rules.json   Realtime Database security rules
-apps-script/Code.gs   Apps Script backend (paste into your script project)
+apps-script/          Google Apps Script backend (Code.gs, appsscript.json)
+tests/                unit tests and Security Rules tests
 docs/                 setup guides
 PLAN.md               roadmap
 ```
@@ -53,6 +58,18 @@ npx serve .
 ```
 
 Open the printed `http://localhost:...` address, and add `localhost` to Firebase Authorized domains if it isn't there.
+
+## Development
+```bash
+npm install
+npm run lint        # ESLint
+npm test            # unit tests (node --test, no extra tools)
+npm run test:rules  # Security Rules tests; needs Java (runs in CI automatically)
+```
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, unit tests and the rules tests on every push and pull request.
+
+## Backups
+`apps-script/Code.gs` has `dailyBackup()`, which saves the whole database as a JSON file in your Drive folder "Travel Band Backups" every night and keeps the last 30. To turn it on: paste the updated `Code.gs` and `appsscript.json`, then run `installBackupTrigger` once from the Apps Script editor and accept the permissions. The backups stay inside your Google account.
 
 ## Security notes
 - Never put the Anthropic key or any secret in `index.html`; the Firebase web config is public by design and is protected by the security rules and key restrictions.
