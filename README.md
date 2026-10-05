@@ -7,7 +7,7 @@ A web app for a tourism transport company in Cairo. Staff log in, record each dr
 - **Drivers**: name, phone, plate, bus sign.
 - **Attendance**: date, route, shift (half day 12:30, normal 14:00, extra 21:00, custom), notes. One record per driver per day.
 - **Work Orders**: photograph a handwritten Arabic sheet; Claude reads name, date and work order; you review and save. The photo goes to the driver's Drive folder and a row to the driver's own Google Sheet tab.
-- **Dashboard and reports**: today's attendance, per-driver and all-driver summaries.
+- **Dashboard and reports**: today's attendance, 7-day chart, drivers not recorded today, top extra shifts; reports with date range, hours worked, per-driver summary, Excel (CSV) export and print/PDF.
 - **Google Sheets sync** of drivers and attendance.
 
 ## How it's built

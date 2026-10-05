@@ -67,12 +67,12 @@ Today it is a single `index.html` (Arabic/English, RTL/LTR) backed by Firebase R
 - [ ] Input validation: Egyptian mobile done; plate format still free text (no agreed format yet).
 
 ### Phase 3 — Reports and export (1 week)
-- [ ] Date-range filter (week / month / custom) on reports.
-- [ ] Hours worked per record and per period (start → end).
-- [ ] Monthly payroll sheet per driver: days, half days, extra shifts, total hours.
-- [ ] Export to CSV / Excel and print-friendly PDF.
-- [ ] Dashboard: week trend chart, most extra shifts, drivers missing today.
-- [ ] Make Google Sheets sync reliable (queue + retry, or replace with a Cloud Function triggered on write).
+- [x] Date-range filter (week / month / custom) on reports.
+- [x] Hours worked per record and per period (start → end).
+- [x] Monthly payroll sheet per driver: days, half days, extra shifts, total hours.
+- [x] Export to CSV / Excel and print-friendly PDF.
+- [x] Dashboard: week trend chart, most extra shifts, drivers missing today.
+- [ ] Make Google Sheets sync reliable — deferred: needs the merged Apps Script to return JSON so failures can be detected (see apps-script/Code.gs).
 
 ### Phase 4 — UX and quality (1 week)
 - [ ] Mobile-first pass: bigger tap targets, sticky save button, bottom nav.
